@@ -1,0 +1,257 @@
+<ScreenManagement>:
+    LessonListScreen:
+        id:screen1
+        name: 'lessons'
+    LessonTitleScreen:
+        name: 'title'
+    LessonFactualScreen:
+        name: 'factual'
+    LessonApplyScreen:
+        name: 'apply'
+    LessonWhiteboardScreen:
+        name: 'whiteboard'
+    LessonNotesScreen:
+        name: 'notes'
+    LessonAssessScreen:
+        name: 'assess'
+<CreatePop>
+    text_lesson_name: create.text
+
+    orientation: 'vertical'
+    GridLayout:
+        cols:2
+        #row_force_default:True
+        #row_default_height:40
+        padding:[20,20,20,20]
+        spacing:[20,20]
+        Label:
+            text:"Lesson Name"
+            size_hint_x:0.2
+
+        TextInput:
+            id:create
+            write_tab: False
+            multiline: False
+            size_hint_x:0.3
+            size_hint_y:0.04
+            font_size:'20sp'
+
+        Button:
+            text: 'Create'
+            size_hint_x:1
+            size_hint_y:0.6
+            on_release: root.create_lesson(self)
+            background_color:[0.76,0.83,0.86,0.8]
+        Button:
+            text: 'Cancel'
+            size_hint_x:1
+            size_hint_y:0.6
+            on_release: root.close_pop(self)
+            background_color:[0.76,0.83,0.86,0.8]
+
+<LessonListScreen>
+
+    container: container
+    BoxLayout:
+        orientation: 'vertical'
+        ActionBar:
+            pos_hint: {'top':1}
+
+            ActionView:
+                use_separator: True
+
+
+                ActionPrevious:
+                    app_icon: "logo_bg_small.png"
+
+                ActionButton:
+                    text: ' Create Mini Lesson '
+                    on_press: root.launch_popup()
+                ActionOverflow:
+                    ActionButton:
+                        text: ' Delete '
+
+                        on_press: root.launch_del_popup()
+
+        ScrollView:
+            #do_scroll_x: False
+            #do_scroll_y: True
+            #size_hint: (1, None)
+            #size:(800,850)
+            size_hint: (1, 1)
+            #bar_width: 10
+            #bar_color: 1, 0, 0, 1   # red
+            #bar_inactive_color: 0, 0, 1, 1   # blue
+            effect_cls: "ScrollEffect"
+            #scroll_type: ['bars']
+
+            BoxLayout:
+                id: container
+                orientation: 'vertical'
+                size_hint_y:None
+
+<ImageSelectPop>:
+    title:"Select Image"
+    search_query:sq.text
+
+    BoxLayout:
+
+
+        orientation:"vertical"
+        spacing:[5,5]
+        BoxLayout:
+            size_hint:(1,0.2)
+            Label:
+                size_hint:(0.2,0.3)
+                text:"Search Images"
+            TextInput:
+                id:sq
+                size_hint:(0.2,0.3)
+
+            Button:
+                size_hint:(0.2,0.3)
+                text: "Search"
+                on_release:root.showImages()
+            Button:
+                size_hint:(0.2,0.3)
+                text: "Camera"
+                on_release:root.cam_pop()
+            Button:
+                size_hint:(0.2,0.3)
+                text: "File"
+                on_release:root.file_pop()
+        GridLayout:
+            cols:2
+            spacing:[20,20]
+            id:imagelist
+
+<imgpopup>:
+    size_hint:(0.7,0.6)
+    title: "Search Image"
+    auto_dismiss:False
+    BoxLayout:
+        orientation:'vertical'
+
+
+        AsyncImage:
+            source:root.text_image
+            #size: 400, 400/ self.image_ratio
+            size_hint: (1,0.8)
+            #allow_stretch:True
+        GridLayout:
+            size_hint: (1,0.2)
+            cols:2
+            Button:
+                size_hint:(0.5,0.2)
+                text:"Select This"
+                on_release: root.save_selected_image()
+                background_color:[0.76,0.83,0.86,0.8]
+
+            Button:
+                size_hint:(0.5,0.2)
+                text:"Close"
+                on_release: root.dismiss()
+                background_color:[0.76,0.83,0.86,0.8]
+
+<campopup>:
+    size_hint:(0.9,0.8)
+    title: "Take a Pic"
+    auto_dismiss:False
+    BoxLayout:
+        orientation:'vertical'
+
+        Camera:
+            id: camera
+            resolution: (640,480)
+
+            play: False
+            canvas.before:
+                PushMatrix
+                Rotate:
+                    angle: -90
+                    origin: self.center
+            canvas.after:
+                PopMatrix
+        ToggleButton:
+            text: 'Play'
+            on_press: camera.play = not camera.play
+            size_hint_y: None
+            height: '48dp'
+
+        Button:
+            text: 'Capture'
+            size_hint_y: None
+            height: '48dp'
+            on_press: root.capture()
+
+
+<filepopup>
+
+    # Creating Icon view other side
+    title:"Choose File"
+    FileChooserIconView:
+
+        on_selection: root.select(*args)
+
+<LessonTitleScreen>
+    tl_image:tl_image
+    BoxLayout:
+        orientation: 'vertical'
+        ActionBar:
+            pos_hint: {'top':1}
+            ActionView:
+                use_separator: True
+                ActionPrevious:
+                    with_previous: True
+                    on_release: root.set_previous_screen()
+                    app_icon: "logo_bg_small.png"
+                ActionButton:
+                    text: ' Next '
+                    on_release:root.set_next_screen()
+
+
+        BoxLayout:
+            orientation:'vertical'
+            spacing: 30
+            TextInput:
+                text: root.text_label_2
+                size_hint: (1,0.1)
+                text_size:(self.width,None)
+                font_size:'25sp'
+                halign:"center"
+            BoxLayout:
+                orientation:'vertical'
+                Image:
+                    id:tl_image
+                    source:root.text_image
+                    size: 350, 350/ self.image_ratio
+                    size_hint: (1,0.7)
+                    allow_stretch: True
+                AnchorLayout:
+                    size_hint:(1,0.2)
+                    Button:
+                        text: 'Add Image'
+                        size_hint:(0.5,0.1)
+                        anchor_x:"center"
+                        on_press: root.launch_image_selector()
+
+
+            ScrollView:
+                id: scrlv
+                size_hint:(1,0.3)
+
+                #TextInput:
+                TextInput:
+
+                    font_size:'20sp'
+
+                    background_color:[0.76,0.83,0.86,0.8]
+
+                    height: max(self.minimum_height, scrlv.height)
+
+                    text:root.text_label_1
+                    size_hint_y: None
+                    halign:"center"
+                    text_size: self.width, None
+
+
