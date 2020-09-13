@@ -16,7 +16,7 @@ class ImageUtils():
                             developerKey="")
             res = service.cse().list(
                 q='friction',
-                cx='dc036f5cac32deb3d',
+                cx='',
                 num=10,
 
 
