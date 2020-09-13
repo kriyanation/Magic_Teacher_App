@@ -8,12 +8,12 @@ class ImageUtils():
 
     def __init__(self):
         headers = {'Content-Type': 'application/json'}
-        url = "https://customsearch.googleapis.com/customsearch/v1?cx=dc036f5cac32deb3d&imgSize=LARGE&num=10&q=friction&safe=active&key=AIzaSyAgTTei1O1_b1DTvrJWbEbM8tuyE_Fm1iA"
+        url = "https://customsearch.googleapis.com/customsearch/v1?cx=&imgSize=LARGE&num=10&q=friction&safe=active&key="
         self.imagelist = []
     def search_images(self,sq):
         try:
             service = build("customsearch", "v1",
-                            developerKey="AIzaSyAgTTei1O1_b1DTvrJWbEbM8tuyE_Fm1iA")
+                            developerKey="")
             res = service.cse().list(
                 q='friction',
                 cx='dc036f5cac32deb3d',
