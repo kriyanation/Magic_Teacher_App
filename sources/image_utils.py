@@ -13,27 +13,25 @@ class ImageUtils():
     def search_images(self,sq):
         try:
             service = build("customsearch", "v1",
-                            developerKey="AIzaSyAgTTei1O1_b1DTvrJWbEbM8tuyE_Fm1iA")
+                            developerKey="AIzaSyDCQTMmD3wJmtKv44wCLx_YT6xGg96Ml4o")
             res = service.cse().list(
-                q='friction',
+                q=sq,
                 cx='dc036f5cac32deb3d',
                 num=10,
-
-
-
-
-
 
             ).execute()
 
             print(res)
-
-            for element in res['items']:
-                print(element['pagemap']['cse_image'][0]['src'])
-                self.imagelist.append(element['pagemap']['cse_image'][0]['src'])
+            if 'items' in res.keys():
+                for element in res['items']:
+                    if 'pagemap' in element.keys():
+                        if 'cse_image' in element['pagemap'].keys():
+                            print(element['pagemap']['cse_image'][0]['src'])
+                            self.imagelist.append(element['pagemap']['cse_image'][0]['src'])
             return self.imagelist
         except:
             traceback.print_exc()
+            return self.imagelist
 
 
 

@@ -1,8 +1,15 @@
 import imghdr
+import ntpath
 import os
 import shutil
-import time
+
 import traceback
+import random
+
+from kivy.metrics import Metrics
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.textinput import TextInput
+from plyer import filechooser
 from kivy.utils import platform
 
 import requests
@@ -13,9 +20,10 @@ from kivy.core.window import Window
 from kivy.properties import ObjectProperty, StringProperty, ListProperty, NumericProperty
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
-from kivy.uix.image import AsyncImage
+from kivy.uix.image import AsyncImage, Image
 from kivy.uix.popup import Popup
 from kivy.uix.screenmanager import ScreenManager, Screen
+
 
 import data_capture_lessons
 import data_lessons
@@ -192,9 +200,8 @@ class LessonTitleScreen(Screen):
         else:
             self.text_image = "placeholder.png"
         Clock.schedule_interval(self.animate, 2)
-        Clock.schedule_interval(self.show_image_added, 10)
-    def show_image_added(self,dt):
-        print(self.text_image)
+
+
     def set_previous_screen(self):
         if self.manager.current == 'title':
             self.manager.transition.direction = 'right'
@@ -202,24 +209,30 @@ class LessonTitleScreen(Screen):
 
     def set_next_screen(self):
         if self.manager.current == 'title':
+            data_capture_lessons.save_changes(self.lessonid,ntpath.basename(self.text_image),self.text_label_1,self.text_label_2)
             self.manager.transition.direction = 'left'
             self.manager.current = self.manager.next()
 
     def launch_image_selector(self):
-        self.popup_imageselect = ImageSelectPop()
-        self.popup_imageselect.set_screen_instance(self)
+        self.popup_imageselect = ImageSelectPop(self)
+
         self.popup_imageselect.open()
 
 
 
 class ImageSelectPop(Popup):
     search_query = StringProperty()
+    def __init__(self,parentscreen,screenindex=100,**kwargs):
+        super().__init__(**kwargs)
+        self.parentscreen = parentscreen
+        self.image_index =screenindex
+
 
     def showImages(self):
         print("button pressed" + self.search_query)
         img_util = image_utils.ImageUtils()
         image_urls = img_util.search_images(self.search_query)
-
+        self.ids.imagelist.clear_widgets()
         for image in image_urls:
             box_layout = BoxLayout(orientation='vertical')
             async_image = AsyncImage(source=image, size=(200, 200))
@@ -232,59 +245,43 @@ class ImageSelectPop(Popup):
     def load_image(self, source, src):
         img_pop = imgpopup()
         img_pop.set_text(src)
-        img_pop.set_parentscreen(self.titlescreen, self)
+        img_pop.set_parentscreen(self.parentscreen,self.image_index, self)
         img_pop.open()
         print("image touched" + src)
 
-    def set_screen_instance(self, titlescreen):
-        self.titlescreen = titlescreen
+    def handle_selection(self,selection):
+        print(selection)
+        self.filename_pfix = "Lessons" + os.path.sep + "Lesson" + str(
+                     self.parentscreen.lessonid) + os.path.sep + "images" + os.path.sep
+        if len(selection) >0:
+            split_filename = selection[0].split(".")
+            extension = split_filename[-1]
+            if ((extension is not None) and (extension.lower() == "png" or extension.lower() == "jpg" or extension.lower() =="gif")):
+                shutil.copyfile(selection[0], self.filename_pfix + "title." + extension)
+            elif extension is not None:
+                print("Only Image files allowed")
+                return
+            else:
+                extension = ""
+                return
+        else:
+            return
+        fname_base = ""
+        if self.parentscreen.manager.current == 'title':
+            fname_base = "title"
+        elif self.parentscreen.manager.current == 'factual':
+            fname_base = "term" + str(self.image_index)
 
-    def cam_pop(self):
-        cam_pop = campopup()
-        cam_pop.open()
-        print("cam opened")
+        if self.parentscreen.manager.current == 'title':
+                self.parentscreen.text_image = self.filename_pfix + fname_base+"."+extension
+        elif self.parentscreen.manager.current == 'factual':
+                self.parentscreen.text_image_display = self.filename_pfix + fname_base+"."+extension
+        self.dismiss()
+
+
 
     def file_pop(self):
-        file_pop = filepopup()
-        file_pop.open()
-        print("file opened")
-
-
-class filepopup(Popup):
-    def select(self, *args):
-        print(args)
-        if len(args[1]) > 0:
-            print(args[1])
-            self.dismiss()
-
-
-class campopup(Popup):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self._request_android_permissions()
-    def capture(self):
-        '''
-        Function to capture the images and give them the names
-        according to their captured time and date.
-        '''
-        camera = self.ids['camera']
-        timestr = time.strftime("%Y%m%d_%H%M%S")
-        camera.export_to_png("IMG_{}.png".format(timestr))
-        print("Captured")
-
-    @staticmethod
-    def is_android():
-        return platform == 'android'
-
-    def _request_android_permissions(self):
-        """
-        Requests CAMERA permission on Android.
-        """
-
-        if not self.is_android():
-            return
-        from android.permissions import request_permission, Permission
-        request_permission(Permission.CAMERA)
+        filechooser.open_file(on_selection=self.handle_selection)
 
 
 class imgpopup(Popup):
@@ -293,9 +290,10 @@ class imgpopup(Popup):
     def set_text(self, text_image):
         self.text_image = text_image
 
-    def set_parentscreen(self, parent, pop):
+    def set_parentscreen(self, parent,image_index, pop):
         self.parentscreen = parent
         self.pop = pop
+        self.image_index = image_index
 
     def save_selected_image(self):
         print(self.text_image)
@@ -318,28 +316,275 @@ class imgpopup(Popup):
             traceback.print_exc()
             print("Wondersky: Error while downloading Images")
         filetype = imghdr.what("titletmp")
+        fname_base = ""
+        if self.parentscreen.manager.current == 'title':
+            fname_base = "title"
+        elif self.parentscreen.manager.current == 'factual':
+            fname_base = "term"+str(self.image_index)
+
         if filetype is not None:
-            filename = self.filename_pfix + "title." + filetype
+            filename = self.filename_pfix + fname_base+"." + filetype
         else:
-            filename = self.filename_pfix + "title"
+            filename = self.filename_pfix + fname_base
         shutil.copyfile("titletmp", filename)
         # os.remove("titletmp")
-        if filetype is not None:
-            self.parentscreen.manager.lesson_dictionary['title_image'] = "title." + filetype
-        else:
-            self.parentscreen.manager.lesson_dictionary['title_image'] = "title"
 
-        self.parentscreen.text_image = self.filename_pfix + self.parentscreen.manager.lesson_dictionary['title_image']
-        self.parentscreen.ids.tl_image.reload()
+        if self.parentscreen.manager.current == "title":
+            self.parentscreen.text_image = filename
+            self.parentscreen.ids.tl_image.reload()
+        elif self.parentscreen.manager.current =="factual":
+            self.parentscreen.text_image_display = filename
+            self.parentscreen.ids.display_image.reload()
+
         self.dismiss()
         self.pop.dismiss()
 
 class LessonFactualScreen(Screen):
-    pass
+    text_image_1 = StringProperty()
+    text_image_2 = StringProperty()
+    text_image_3 = StringProperty()
+    text_image_display = StringProperty()
 
+    text_term_description_1 = StringProperty()
+    text_term_description_2 = StringProperty()
+    text_term_description_3 = StringProperty()
+    text_term_description = StringProperty()
+    text_term_display = StringProperty()
+
+    def __init__(self, **kwargs):
+        super(LessonFactualScreen, self).__init__(**kwargs)
+        Window.bind(on_keyboard=self.on_key)
+
+    def on_enter(self):
+        self.lessonid = self.manager.get_screen('lessons').selected_lesson
+        self.display_index = 0
+        self.draw_Screen()
+        self.text_image_display = self.text_image_1
+        self.text_term_description = self.text_term_description_1
+        self.text_term_display = self.text_term_display_1
+    def draw_Screen(self):
+        self.textimage_1,  self.textimage_2,  self.textimage_3 = data_capture_lessons.get_fact_images(self.lessonid)
+        self.text_term_1,  self.text_term_2,  self.text_term_3 = data_capture_lessons.get_fact_terms(self.lessonid)
+        self.textterm_description_1,  self.textterm_description_2,  self.textterm_description_3 = data_capture_lessons.get_fact_descriptions(
+            self.lessonid)
+        imagepath = "Lessons/Lesson" + str(self.lessonid) + "/images/"
+        if  self.textimage_1 is None:
+            self.textimage_1 = ""
+        if  self.textimage_2 is None:
+            self.textimage_2 = ""
+        if  self.textimage_3 is None:
+            self.textimage_3 = ""
+        text_image1 = imagepath +  self.textimage_1
+        text_image2 = imagepath +  self.textimage_2
+        text_image3 = imagepath +  self.textimage_3
+
+        if  self.textterm_description_1 is not None:
+            self.text_term_description_1 =  self.textterm_description_1
+        else:
+            self.text_term_description_1 = ""
+        if  self.textterm_description_2 is not None:
+            self.text_term_description_2 =  self.textterm_description_2
+        else:
+            self.text_term_description_2 = ""
+        if  self.textterm_description_3 is not None:
+            self.text_term_description_3 =  self.textterm_description_3
+        else:
+            self.text_term_description_3 = ""
+        if  self.text_term_1 is not None:
+            self.text_term_display_1 =  self.text_term_1
+        else:
+            self.text_term_display_1 = ""
+        if  self.text_term_2 is not None:
+            self.text_term_display_2 =  self.text_term_2
+        else:
+            self.text_term_display_2 = ""
+        if  self.text_term_3 is not None:
+            self.text_term_display_3 =  self.text_term_3
+        else:
+            self.text_term_display_3 = ""
+
+        if not os.path.exists(text_image1) or  self.textimage_1 == "":
+            self.text_image_1 = "placeholder.png"
+        else:
+            self.text_image_1 = text_image1
+        if not os.path.exists(text_image2) or  self.textimage_2 == "":
+            self.text_image_2 = "placeholder.png"
+        else:
+            self.text_image_2 = text_image2
+        if not os.path.exists(text_image3) or  self.textimage_3 == "":
+            self.text_image_3 = "placeholder.png"
+        else:
+            self.text_image_3 = text_image3
+
+
+
+    def on_key(self, window, key, *args):
+        if key == 27:  # the esc key
+            if self.manager.current == 'factual':
+                self.manager.current = 'title'
+                return True
+
+
+
+    def load_next(self):
+
+        if self.display_index == 3:
+            self.display_index = 0
+
+        if self.display_index == 0:
+            data_capture_lessons.update_term1(self.lessonid, os.path.basename(self.text_image_display),
+                                              self.text_term_description, self.text_term_display)
+            # self.text_image_display = self.text_image_1
+            # self.text_term_description = self.text_term_description_1
+            # self.text_term_display = self.text_term_display_1
+            self.text_image_display = self.text_image_2
+            self.text_term_description = self.text_term_description_2
+            self.text_term_display = self.text_term_display_2
+
+        elif self.display_index == 1:
+            data_capture_lessons.update_term2(self.lessonid, os.path.basename(self.text_image_display),
+                                              self.text_term_description,
+                                              self.text_term_display)
+            # self.text_image_display = self.text_image_2
+            # self.text_term_description = self.text_term_description_2
+            # self.text_term_display = self.text_term_display_2
+            self.text_image_display = self.text_image_3
+            self.text_term_description = self.text_term_description_3
+            self.text_term_display = self.text_term_display_3
+
+        else:
+            data_capture_lessons.update_term3(self.lessonid, os.path.basename(self.text_image_display),
+                                              self.text_term_description,
+                                              self.text_term_display)
+            # self.text_image_display = self.text_image_3
+            # self.text_term_description = self.text_term_description_3
+            # self.text_term_display = self.text_term_display_3
+            self.text_image_display = self.text_image_1
+            self.text_term_description = self.text_term_description_1
+            self.text_term_display = self.text_term_display_1
+
+        self.draw_Screen()
+        self.display_index += 1
+    def load_previous(self):
+
+        self.display_index -= 1
+        if self.display_index == -1:
+            self.display_index = 2
+
+        if self.display_index == 0:
+            self.text_image_display = self.text_image_1
+            self.text_term_description = self.text_term_description_1
+            self.text_term_display = self.text_term_display_1
+        elif self.display_index == 1:
+            self.text_image_display = self.text_image_2
+            self.text_term_description = self.text_term_description_2
+            self.text_term_display = self.text_term_display_2
+        else:
+            self.text_image_display = self.text_image_3
+            self.text_term_description = self.text_term_description_3
+            self.text_term_display = self.text_term_display_3
+
+    def set_previous_screen(self):
+        if self.manager.current == 'factual':
+            self.manager.transition.direction = 'right'
+            self.manager.current = self.manager.previous()
+
+    def set_next_screen(self):
+        if self.manager.current == 'factual':
+            self.manager.transition.direction = 'left'
+            self.manager.current = self.manager.next()
+    def launch_image_selector(self):
+        self.popup_imageselect = ImageSelectPop(self,self.display_index)
+
+        self.popup_imageselect.open()
 
 class LessonApplyScreen(Screen):
-    pass
+    text_label_1 = StringProperty("Dynamic Text" + str(random.randint(1, 100)))
+    text_label_2 = StringProperty("test.png")
+    steps = ObjectProperty(None)
+
+    def __init__(self, **kwargs):
+        super(LessonApplyScreen, self).__init__(**kwargs)
+        Window.bind(on_keyboard=self.on_key)
+
+    def on_key(self, window, key, *args):
+        if key == 27:  # the esc key
+            if self.manager.current == 'apply':
+                self.manager.current = 'factual'
+                return True
+
+    def on_enter(self):
+
+        self.lessonid = self.manager.get_screen('lessons').selected_lesson
+        self.number_of_steps = data_capture_lessons.get_number_of_steps(self.lessonid)
+        self.step_list = data_capture_lessons.get_description_list(self.lessonid)
+        self.image_list = data_capture_lessons.get_step_image_list(self.lessonid)
+        if self.number_of_steps is None:
+            self.number_of_steps = 1
+        self.add_steps_buttons()
+
+    def set_previous_screen(self):
+        if self.manager.current == 'apply':
+            self.manager.transition.direction = 'right'
+            self.manager.current = self.manager.previous()
+
+    def set_next_screen(self):
+        if self.manager.current == 'apply':
+            self.manager.transition.direction = 'left'
+            self.manager.current = self.manager.next()
+
+    def add_steps_buttons(self):
+
+        self.text_list = []
+        self.steps.clear_widgets()
+        #        self.images.clear_widgets()
+        imagepath = "Lessons/Lesson" + str(self.lessonid) + "/images/"
+        for i in range(8):
+            text = self.step_list[i]
+            if text is None:
+                text = ""
+            bx_layout = BoxLayout(spacing = [10,10])
+            text_input = TextInput(text=text, height="70sp",size_hint = (0.8,None)
+                            ,text_size=(3.5 * Metrics.dpi, None),
+                            font_size='18sp')
+            image_button = Button(text="Image",height="40sp",size_hint = (0.1,None))
+            if self.image_list[i] is not None:
+                text_image = imagepath + self.image_list[i]
+            else:
+                text_image = "placeholder.png"
+            step_image = Image(source=text_image,size=(100,50),size_hint = (0.2,None))
+
+            bx_layout.add_widget(text_input)
+            bx_layout.add_widget(image_button)
+            bx_layout.add_widget(step_image)
+
+            self.text_list.append(text_input)
+           # button.on_release = lambda instance=button, a=i: self.add_image(instance, a)
+            self.steps.add_widget(bx_layout)
+
+
+
+    def add_image(self, instance, a, *args):
+        print(a)
+        print(instance)
+        if a < self.number_of_steps - 1:
+            button = self.button_list[a + 1]
+            button.disabled = False
+        imagepath = "Lessons/Lesson" + str(self.lessonid) + "/images/"
+        if (self.image_list[a] != None and self.image_list[a].strip() != ""):
+            # image = Image(source=imagepath+self.image_list[a],size_hint_y=None,size=(400,400))
+            # self.images.add_widget(image)
+
+            self.text_image = imagepath + self.image_list[a]
+            text_no_image = ""
+        else:
+            self.text_image = "trans.png"
+            text_no_image = "No Image Associated with this step"
+        img_pop = imgpopup()
+        img_pop.set_text(self.text_image, self.step_list[a], text_no_image)
+        img_pop.open()
+
+
 
 
 class LessonWhiteboardScreen(Screen):

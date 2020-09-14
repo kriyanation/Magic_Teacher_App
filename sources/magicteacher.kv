@@ -112,14 +112,17 @@
                 size_hint:(0.2,0.3)
                 text: "Search"
                 on_release:root.showImages()
-            Button:
-                size_hint:(0.2,0.3)
-                text: "Camera"
-                on_release:root.cam_pop()
+
             Button:
                 size_hint:(0.2,0.3)
                 text: "File"
                 on_release:root.file_pop()
+
+            Button:
+                size_hint:(0.2,0.3)
+                text: "Close"
+                on_release:root.dismiss()
+
         GridLayout:
             cols:2
             spacing:[20,20]
@@ -160,29 +163,32 @@
     BoxLayout:
         orientation:'vertical'
 
-        Camera:
-            id: camera
-            resolution: (640,480)
+       # Camera:
+       #     id: camera
+       #     play:True
+       #     resolution: (640,480)
 
-            play: False
-            canvas.before:
-                PushMatrix
-                Rotate:
-                    angle: -90
-                    origin: self.center
-            canvas.after:
-                PopMatrix
-        ToggleButton:
-            text: 'Play'
-            on_press: camera.play = not camera.play
-            size_hint_y: None
-            height: '48dp'
+
+       #     canvas.before:
+       #         PushMatrix
+       #         Rotate:
+       #             angle: -90
+       #             origin: self.center
+       #     canvas.after:
+       #         PopMatrix
+
 
         Button:
             text: 'Capture'
             size_hint_y: None
             height: '48dp'
             on_press: root.capture()
+
+        Button:
+            text: 'Close'
+            size_hint_y: None
+            height: '48dp'
+            on_press: root.dismiss()
 
 
 <filepopup>
@@ -195,6 +201,8 @@
 
 <LessonTitleScreen>
     tl_image:tl_image
+    text_label_1:text_title.text
+    text_label_2:text_description.text
     BoxLayout:
         orientation: 'vertical'
         ActionBar:
@@ -214,6 +222,7 @@
             orientation:'vertical'
             spacing: 30
             TextInput:
+                id:text_title
                 text: root.text_label_2
                 size_hint: (1,0.1)
                 text_size:(self.width,None)
@@ -242,7 +251,7 @@
 
                 #TextInput:
                 TextInput:
-
+                    id:text_description
                     font_size:'20sp'
 
                     background_color:[0.76,0.83,0.86,0.8]
@@ -255,3 +264,112 @@
                     text_size: self.width, None
 
 
+<LessonFactualScreen>
+    display_image:display_image
+    text_term_display : term.text
+    text_term_description:description.text
+    BoxLayout:
+        orientation: 'vertical'
+
+        ActionBar:
+            pos_hint: {'top':1}
+            ActionView:
+                use_separator: True
+                ActionPrevious:
+                    with_previous: True
+                    app_icon: "logo_bg_small.png"
+                    on_release: root.set_previous_screen()
+                ActionButton:
+                    text: ' Next '
+                    on_release:root.set_next_screen()
+
+        BoxLayout:
+
+            size_hint:(0.2,0.03)
+            pos_hint:{'x': 0.4,'top':1}
+
+            Button:
+                text: '<'
+                #size_hint:(0.06,0.1)
+                on_press:root.load_previous()
+                height:10
+                width:10
+                background_color:[0.76,0.83,0.86,0.8]
+            Button:
+                text: '>'
+                #size_hint:(0.06,0.1)
+                height:10
+                width:10
+                on_press:root.load_next()
+                background_color:[0.76,0.83,0.86,0.8]
+
+
+        BoxLayout:
+            orientation:'vertical'
+            size_hint:(1,0.5)
+            Image:
+                id:display_image
+                source:root.text_image_display
+
+            AnchorLayout:
+                size_hint:(1,0.2)
+                Button:
+                    text: 'Add Image'
+                    size_hint:(0.5,0.1)
+                    anchor_x:"center"
+                    on_press: root.launch_image_selector()
+            TextInput:
+                id:term
+                text:root.text_term_display
+                size_hint:(1,0.1)
+                halign:"center"
+
+            ScrollView:
+                id:scrlv
+                size_hint:(1,0.4)
+                TextInput:
+                    id:description
+                    #size_hint:(1,0.3)
+                    text:root.text_term_description
+                    text_size: self.width, None
+                    font_size: "20sp"
+                    height: max(self.minimum_height, scrlv.height)
+                    halign:"center"
+                    valign:"top"
+                    size_hint_y: None
+<LessonApplyScreen>
+    steps: steps
+    #images: images
+    BoxLayout:
+
+        orientation: 'vertical'
+        ActionBar:
+            pos_hint: {'top':1}
+            ActionView:
+                use_separator: True
+                ActionPrevious:
+                    with_previous: True
+                    on_release: root.set_previous_screen()
+                    app_icon: "logo_bg_small.png"
+                ActionButton:
+                    text: ' Next '
+                    on_release:root.set_next_screen()
+
+
+
+        BoxLayout:
+            orientation: 'vertical'
+            Label:
+                size_hint:(1,0.1)
+                font_size: "25sp"
+                text: "Sequence of Facts or Steps"
+            ScrollView:
+                id: scrlv1
+                size_hint: (1, 1)
+                BoxLayout:
+                    orientation:'vertical'
+                    pos_hint: {'top': 1}
+
+                    id: steps
+                    size_hint_y:None
+                    height: max(self.minimum_height, scrlv1.height)

@@ -226,3 +226,53 @@ def create_lesson(text_lesson_name):
     except sqlite3.OperationalError:
         traceback.print_exc()
         return 1
+
+
+def save_changes(lesson_id,text_image, text_label_1, text_label_2):
+    try:
+        connection = sqlite3.connect(db)
+        cur = connection.cursor()
+        sql = ("update Magic_Science_Lessons set Title_Image=?,Lesson_Title=?,Title_Running_Notes=? where Lesson_ID = ?")
+        cur.execute(sql, (text_image,text_label_1,text_label_2,lesson_id))
+        connection.commit()
+        return 0
+    except sqlite3.OperationalError:
+        traceback.print_exc()
+        return 1
+
+
+def update_term1(lessonid, text_image_display, text_term_description, text_term_display):
+    try:
+        connection = sqlite3.connect(db)
+        cur = connection.cursor()
+        sql = ("update Magic_Science_Lessons set Factual_Term1=?,Factual_Term1_Description=?,Factual_Image1=? where Lesson_ID = ?")
+        cur.execute(sql, (text_term_display,text_term_description,text_image_display,lessonid))
+        connection.commit()
+        return 0
+    except sqlite3.OperationalError:
+        traceback.print_exc()
+        return 1
+
+def update_term2(lessonid, text_image_display, text_term_description, text_term_display):
+    try:
+        connection = sqlite3.connect(db)
+        cur = connection.cursor()
+        sql = ("update Magic_Science_Lessons set Factual_Term2=?,Factual_Term2_Description=?,Factual_Image2=? where Lesson_ID = ?")
+        cur.execute(sql, (text_term_display,text_term_description,text_image_display,lessonid))
+        connection.commit()
+        return 0
+    except sqlite3.OperationalError:
+        traceback.print_exc()
+        return 1
+
+def update_term3(lessonid, text_image_display, text_term_description, text_term_display):
+    try:
+        connection = sqlite3.connect(db)
+        cur = connection.cursor()
+        sql = ("update Magic_Science_Lessons set Factual_Term3=?,Factual_Term3_Description=?,Factual_Image3=? where Lesson_ID = ?")
+        cur.execute(sql, (text_term_display,text_term_description,text_image_display,lessonid))
+        connection.commit()
+        return 0
+    except sqlite3.OperationalError:
+        traceback.print_exc()
+        return 1
