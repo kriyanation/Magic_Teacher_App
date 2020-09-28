@@ -1,3 +1,4 @@
+#:import Factory kivy.factory.Factory
 <ScreenManagement>:
     LessonListScreen:
         id:screen1
@@ -14,9 +15,11 @@
         name: 'notes'
     LessonAssessScreen:
         name: 'assess'
-<CreatePop>
-    text_lesson_name: create.text
 
+<ImportPop>
+    text_userid: user.text
+    text_classid: classid.text
+    text_lessonid: lesson.text
     orientation: 'vertical'
     GridLayout:
         cols:2
@@ -24,6 +27,156 @@
         #row_default_height:40
         padding:[20,20,20,20]
         spacing:[20,20]
+        Label:
+            text:"User ID"
+            size_hint_x:0.2
+
+        TextInput:
+            id:user
+            write_tab: False
+            multiline: False
+            size_hint_x:0.3
+            size_hint_y:0.04
+            font_size:'20sp'
+
+        Label:
+            text:"Class ID"
+            size_hint_x:0.2
+
+
+        TextInput:
+            id:classid
+            write_tab: False
+            multiline: False
+            size_hint_x:0.3
+            size_hint_y:0.04
+            font_size:'20sp'
+
+        Label:
+            text:"Lesson ID"
+            size_hint_x:0.2
+
+        TextInput:
+            id:lesson
+            write_tab: False
+            multiline: False
+            size_hint_x:0.3
+            size_hint_y:0.04
+            font_size:'20sp'
+
+
+
+        Button:
+            text: 'Submit'
+            size_hint_x:0.2
+            size_hint_y:0.8
+            on_release: root.import_lesson(self)
+            background_color:[0.76,0.83,0.86,0.8]
+
+        Button:
+            text: 'Cancel'
+            size_hint_x:0.2
+            size_hint_y:0.8
+            on_release: root.close_pop()
+            background_color:[0.76,0.83,0.86,0.8]
+    Label:
+        text: root.text_status
+        size_hint:(1,0.2)
+        text_size:(self.width,None)
+
+
+<PublishPop>
+    text_user: user.text
+    text_pwd: password.text
+    title:"Publish Lesson"
+    BoxLayout:
+        orientation: 'vertical'
+        GridLayout:
+            cols:2
+            #row_force_default:True
+            #row_default_height:40
+            padding:[20,20,20,20]
+            spacing:[20,20]
+            Label:
+                text:"User ID"
+                size_hint_x:0.2
+
+            TextInput:
+                id:user
+                write_tab: False
+                multiline: False
+                size_hint_x:0.3
+                size_hint_y:0.04
+                font_size:'20sp'
+
+            Label:
+                text:"Password"
+                size_hint_x:0.2
+
+
+            TextInput:
+                id:password
+                write_tab: False
+                multiline: False
+                password:True
+                size_hint_x:0.3
+                size_hint_y:0.04
+                font_size:'20sp'
+
+
+            Button:
+                text: 'Submit'
+                size_hint_x:0.2
+                size_hint_y:0.8
+                on_release: root.publish_lesson()
+                background_color:[0.76,0.83,0.86,0.8]
+
+            Button:
+                text: 'Cancel'
+                size_hint_x:0.2
+                size_hint_y:0.8
+                on_release: root.dismiss()
+                background_color:[0.76,0.83,0.86,0.8]
+        AnchorLayout:
+            Button:
+                text: 'Register'
+                anchor_x:"center"
+                size_hint_x:0.2
+                size_hint_y:0.2
+                halign:"center"
+                on_release: root.close_pop()
+                background_color:[0.76,0.83,0.86,0.8]
+        Label:
+            text: root.text_status
+            size_hint:(1,0.2)
+            text_size:(self.width,None)
+
+<CreatePop>
+    text_lesson_name: create.text
+    text_lang:lang.text
+
+    orientation: 'vertical'
+    GridLayout:
+        padding:[20,20,20,20]
+        spacing:[20,20]
+        cols:2
+        row_force_default:True
+        row_default_height:80
+
+
+        Label:
+            text:"Language"
+            size_hint_x:0.2
+
+        Spinner:
+            id: lang
+            text: " English "
+            halign:"left"
+            text_size:(300, None)
+            values: ['English', 'Hindi', 'Kannada', 'Tamil']     #list of values to show
+            option_cls: Factory.get("DelSpinnerOption")
+            on_text: root.on_select_lang(self.text)
+            background_color:[0.76,0.83,0.86,0.8]
         Label:
             text:"Lesson Name"
             size_hint_x:0.2
@@ -33,25 +186,73 @@
             write_tab: False
             multiline: False
             size_hint_x:0.3
-            size_hint_y:0.04
+
             font_size:'20sp'
 
         Button:
             text: 'Create'
             size_hint_x:1
-            size_hint_y:0.6
+            size_hint_y:0.3
             on_release: root.create_lesson(self)
             background_color:[0.76,0.83,0.86,0.8]
         Button:
             text: 'Cancel'
             size_hint_x:1
-            size_hint_y:0.6
+            size_hint_y:0.3
             on_release: root.close_pop(self)
+            background_color:[0.76,0.83,0.86,0.8]
+
+<DelSpinnerOption@SpinnerOption>
+    halign: "left"
+    text_size:(300,None)
+
+<DeletePop>
+    #text_lessoid: user.text
+    auto_dismiss:False
+    size_hint:(1,0.5)
+    title:"Delete Mini Lesson"
+    BoxLayout:
+        orientation:"vertical"
+        GridLayout:
+            cols:3
+            padding:[20,20,20,20]
+            spacing:[20,20]
+            row_force_default:True
+            row_default_height:"40dp"
+            Label:
+                text: "Select Mini Lesson"
+
+                text_size: (200,None)
+
+            Spinner:
+                id: whatever
+                text: " Select Lesson "
+
+                halign:"left"                              #default value showed
+                text_size:(300, None)
+                values: root.lesson_list      #list of values to show
+                option_cls: Factory.get("DelSpinnerOption")
+                on_text:
+                    root.on_select_lesson(self.text)
+                background_color:[0.76,0.83,0.86,0.8]
+
+            Button:
+                text: " Delete "
+                height: "30dp"
+                on_release: root.on_delete()
+                background_color:[0.76,0.83,0.86,0.8]
+        Label:
+            text:root.status_label
+            size_hint: (1,0.1)
+        Button:
+            text: "Close"
+            size_hint: (1,0.2)
+            on_release: root.dismiss()
             background_color:[0.76,0.83,0.86,0.8]
 
 <LessonListScreen>
 
-    container: container
+    lesson_c:lesson_c
     BoxLayout:
         orientation: 'vertical'
         ActionBar:
@@ -62,11 +263,15 @@
 
 
                 ActionPrevious:
-                    app_icon: "logo_bg_small.png"
+                    app_icon: "logo.png"
 
                 ActionButton:
                     text: ' Create Mini Lesson '
                     on_press: root.launch_popup()
+
+                ActionButton:
+                    text: ' Import '
+                    on_press: root.launch_popup_import()
                 ActionOverflow:
                     ActionButton:
                         text: ' Delete '
@@ -86,7 +291,7 @@
             #scroll_type: ['bars']
 
             BoxLayout:
-                id: container
+                id:lesson_c
                 orientation: 'vertical'
                 size_hint_y:None
 
@@ -100,13 +305,12 @@
         orientation:"vertical"
         spacing:[5,5]
         BoxLayout:
+            spacing:[5,5]
             size_hint:(1,0.2)
-            Label:
-                size_hint:(0.2,0.3)
-                text:"Search Images"
+
             TextInput:
                 id:sq
-                size_hint:(0.2,0.3)
+                size_hint:(0.4,0.35)
 
             Button:
                 size_hint:(0.2,0.3)
@@ -115,7 +319,7 @@
 
             Button:
                 size_hint:(0.2,0.3)
-                text: "File"
+                text: "Link"
                 on_release:root.file_pop()
 
             Button:
@@ -144,6 +348,8 @@
         GridLayout:
             size_hint: (1,0.2)
             cols:2
+            row_force_default:True
+            row_default_height:60
             Button:
                 size_hint:(0.5,0.2)
                 text:"Select This"
@@ -155,6 +361,57 @@
                 text:"Close"
                 on_release: root.dismiss()
                 background_color:[0.76,0.83,0.86,0.8]
+
+<imgurlpopup>:
+    url_txt:url_txt
+    size_hint:(0.9,0.8)
+    title: "Image Link"
+    auto_dismiss:False
+    BoxLayout:
+        orientation:'vertical'
+        size_hint:(0.9,0.8)
+        pos_hint: {'top':1}
+        BoxLayout:
+            padding:[10,10,10,10]
+            pos_hint: {'top':1}
+            size_hint:(1,0.3)
+            Label:
+                pos_hint: {'top':1}
+                size_hint:(0.15,0.3)
+                text:"Link"
+            TextInput:
+                pos_hint: {'top':1}
+                id:url_txt
+                size_hint:(0.25,0.25)
+
+            Button:
+                pos_hint: {'top':1}
+                size_hint:(0.15,0.25)
+                text: "Show"
+                on_release:root.show_image(root.url_txt.text)
+
+        AsyncImage:
+            pos_hint: {'top':1}
+            source:root.text_image
+           # size: 400, 400/ self.image_ratio
+            size_hint: (1,0.3)
+            #allow_stretch:True
+        BoxLayout:
+            pos_hint: {'top':1}
+            size_hint: (1,0.2)
+
+            Button:
+                size_hint:(0.5,0.2)
+                text:"Select This"
+                on_release: root.save_selected_image()
+                background_color:[0.76,0.83,0.86,0.8]
+
+            Button:
+                size_hint:(0.5,0.2)
+                text:"Close"
+                on_release: root.dismiss()
+                background_color:[0.76,0.83,0.86,0.8]
+
 
 <campopup>:
     size_hint:(0.9,0.8)
@@ -191,18 +448,12 @@
             on_press: root.dismiss()
 
 
-<filepopup>
 
-    # Creating Icon view other side
-    title:"Choose File"
-    FileChooserIconView:
-
-        on_selection: root.select(*args)
 
 <LessonTitleScreen>
     tl_image:tl_image
-    text_label_1:text_title.text
-    text_label_2:text_description.text
+    text_label_1:text_description.text
+    text_label_2:text_title.text
     BoxLayout:
         orientation: 'vertical'
         ActionBar:
@@ -212,7 +463,7 @@
                 ActionPrevious:
                     with_previous: True
                     on_release: root.set_previous_screen()
-                    app_icon: "logo_bg_small.png"
+                    app_icon: "logo.png"
                 ActionButton:
                     text: ' Next '
                     on_release:root.set_next_screen()
@@ -240,7 +491,7 @@
                     size_hint:(1,0.2)
                     Button:
                         text: 'Add Image'
-                        size_hint:(0.5,0.1)
+                        size_hint:(0.5,0.25)
                         anchor_x:"center"
                         on_press: root.launch_image_selector()
 
@@ -277,7 +528,7 @@
                 use_separator: True
                 ActionPrevious:
                     with_previous: True
-                    app_icon: "logo_bg_small.png"
+                    app_icon: "logo.png"
                     on_release: root.set_previous_screen()
                 ActionButton:
                     text: ' Next '
@@ -290,14 +541,14 @@
 
             Button:
                 text: '<'
-                #size_hint:(0.06,0.1)
+                #size_hint:(0.06,0.15)
                 on_press:root.load_previous()
                 height:10
                 width:10
                 background_color:[0.76,0.83,0.86,0.8]
             Button:
                 text: '>'
-                #size_hint:(0.06,0.1)
+                #size_hint:(0.06,0.15)
                 height:10
                 width:10
                 on_press:root.load_next()
@@ -312,10 +563,10 @@
                 source:root.text_image_display
 
             AnchorLayout:
-                size_hint:(1,0.2)
+                size_hint:(1,0.3)
                 Button:
                     text: 'Add Image'
-                    size_hint:(0.5,0.1)
+                    size_hint:(0.5,0.2)
                     anchor_x:"center"
                     on_press: root.launch_image_selector()
             TextInput:
@@ -350,7 +601,7 @@
                 ActionPrevious:
                     with_previous: True
                     on_release: root.set_previous_screen()
-                    app_icon: "logo_bg_small.png"
+                    app_icon: "logo.png"
                 ActionButton:
                     text: ' Next '
                     on_release:root.set_next_screen()
@@ -371,5 +622,137 @@
                     pos_hint: {'top': 1}
 
                     id: steps
-                    size_hint_y:None
                     height: max(self.minimum_height, scrlv1.height)
+                    size_hint_y:None
+
+
+<LessonWhiteboardScreen>
+    cw:cw
+    sv:sv
+
+    BoxLayout:
+
+        orientation: 'vertical'
+        ActionBar:
+
+            pos_hint: {'top':1}
+            ActionView:
+                use_separator: True
+                ActionPrevious:
+                    with_previous: True
+                    on_release: root.set_previous_screen()
+                    app_icon: "logo.png"
+
+                ActionButton:
+                    text: ' Next '
+                    on_release:root.set_next_screen()
+        BoxLayout:
+            height:"50sp"
+            pos_hint: {'top': 1}
+            size_hint:(1,None)
+            Button:
+                text:"save"
+                valign:"top"
+                size_hint:(0.3,None)
+                height:"40sp"
+                on_release:root.save_canvas(root.sv)
+            Button:
+                text:"clear"
+                size_hint:(0.3,None)
+                height:"40sp"
+                on_release:root.cw.clear()
+            ToggleButton:
+                text: root.cw.text_button
+                on_state: root.cw.erase() if self.state == 'down' else root.cw.pen()
+                size_hint:(0.3,None)
+                height:"40sp"
+
+
+        StencilView:
+            id:sv
+            size_hint:(1,0.8)
+            CWidget:
+                size_hint:(1,None)
+                id:cw
+
+
+
+<LessonNotesScreen>
+    text_label_1: txt.text
+    BoxLayout:
+        orientation: 'vertical'
+        ActionBar:
+            pos_hint: {'top':1}
+            ActionView:
+                use_separator: True
+                ActionPrevious:
+                    with_previous: True
+                    on_release: root.set_previous_screen()
+                    app_icon: "logo.png"
+                ActionButton:
+                    text: 'Next'
+                    on_release:root.set_next_screen()
+        ScrollView:
+            padding:[20,20,20,20]
+            id: scrlv
+            size_hint:(1,0.7)
+            TextInput:
+                id:txt
+                size_hint:(1,None)
+                hint_text:"Descriptive Texts and Explanations"
+                font_size:"20sp"
+                multiline:True
+                text_size: self.width, None
+                height: max(self.minimum_height, scrlv.height)
+                text:root.text_label_1
+        Button:
+            size_hint:(1,0.2)
+            text:"Save"
+            on_release: root.on_save()
+            background_color:[0.76,0.83,0.86,0.8]
+
+<LessonAssessScreen>
+    text_label_1: txt.text
+    BoxLayout:
+        orientation: 'vertical'
+        ActionBar:
+            pos_hint: {'top':1}
+            ActionView:
+                use_separator: True
+                ActionPrevious:
+                    with_previous: True
+                    on_release: root.set_previous_screen()
+                    app_icon: "logo.png"
+                ActionButton:
+                    text: ' Publish '
+                    on_release:root.publish_lesson()
+                ActionButton:
+                    text: ' Done '
+                    on_release:root.set_next_screen()
+        ScrollView:
+            padding:[20,20,20,20]
+            id: scrlv
+            size_hint:(1,0.7)
+            TextInput:
+                id:txt
+                size_hint:(1,None)
+                hint_text:"Questions for Assessment"
+                font_size:"20sp"
+                multiline:True
+                text_size: self.width, None
+                height: max(self.minimum_height, scrlv.height)
+                text:root.text_label_1
+        TextInput:
+            id:txt_form
+            size_hint:(1,0.1)
+            hint_text:"Google Form Link"
+            font_size:"20sp"
+            multiline:False
+            text_size: self.width, None
+
+            text:root.text_label_2
+        Button:
+            size_hint:(1,0.2)
+            text:"Save"
+            on_release: root.on_save()
+            background_color:[0.76,0.83,0.86,0.8]
