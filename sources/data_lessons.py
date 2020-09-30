@@ -47,43 +47,53 @@ def prepare_lesson_share(lesson_id):
      "lesson_id": "''' +str(rows[0])+'''",
      "class_id": "''' +str(class_id)+'''",
      "user": "http://learning-room-285708.el.r.appspot.com/auth/users/'''+str(User)+'''/",
-     "title": "''' +rows[1]+'''",
+     "title": "''' +make_json_ready(rows[1])+'''",
      "title_image": "''' + convert_base_64(imageroot+rows[2]) + '''",
      "title_video": null,
-     "title_description": "''' +rows[4].replace("\n", "~")+'''",
-     "term1": "''' +rows[5]+'''",
-     "term1_description": "''' +rows[6].replace("\n", "~")+'''",
+     "title_description": "''' +make_json_ready(rows[4])+'''",
+     "term1": "''' +make_json_ready(rows[5])+'''",
+     "term1_description": "''' +make_json_ready(rows[6])+'''",
      "term1_image": "''' + convert_base_64(imageroot+rows[7]) + '''",
-     "term2": "''' +rows[8]+'''",
-     "term2_description": "''' +rows[9].replace("\n", "~")+'''",
+     "term2": "''' +make_json_ready(rows[8])+'''",
+     "term2_description": "''' +make_json_ready(rows[9])+'''",
      "term2_image": "''' + convert_base_64(imageroot+rows[10]) + '''",
-     "term3": "''' +rows[11]+'''",
-     "term3_description": "''' +rows[12].replace("\n", "~")+'''",
+     "term3": "''' +make_json_ready(rows[11])+'''",
+     "term3_description": "''' +make_json_ready(rows[12])+'''",
      "term3_image": "''' + convert_base_64(imageroot+rows[13]) + '''",
      "number_of_steps": "'''+str(rows[14])+'''",
-     "step1_description": "'''+rows[15]+'''",
+     "step1_description": "'''+make_json_ready(rows[15])+'''",
      "step1_image": "''' + convert_base_64(imageroot+rows[23]) + '''",
-     "step2_description": "'''+rows[16]+'''",
+     "step2_description": "'''+make_json_ready(rows[16])+'''",
      "step2_image": "''' + convert_base_64(imageroot+rows[24]) + '''",
-     "step3_description": "'''+rows[17]+'''",
+     "step3_description": "'''+make_json_ready(rows[17])+'''",
      "step3_image": "''' + convert_base_64(imageroot+rows[25]) + '''",
-     "step4_description": "'''+rows[18]+'''",
+     "step4_description": "'''+make_json_ready(rows[18])+'''",
      "step4_image": "''' + convert_base_64(imageroot+rows[26]) + '''",
-     "step5_description": "'''+rows[19]+'''",
+     "step5_description": "'''+make_json_ready(rows[19])+'''",
      "step5_image": "''' + convert_base_64(imageroot+rows[27]) + '''",
-     "step6_description": "'''+rows[20]+'''",
+     "step6_description": "'''+make_json_ready(rows[20])+'''",
      "step6_image": "''' + convert_base_64(imageroot+rows[28]) + '''",
-     "step7_description": "'''+rows[21]+'''",
+     "step7_description": "'''+make_json_ready(rows[21])+'''",
      "step7_image": "''' + convert_base_64(imageroot+rows[29]) + '''",
-     "step8_description": "'''+rows[22]+'''",
+     "step8_description": "'''+make_json_ready(rows[22])+'''",
      "step8_image": "''' + convert_base_64(imageroot+rows[30]) + '''",
-     "questions": "'''+rows[31].replace("\n", "~")+'''",
+     "questions": "'''+make_json_ready(rows[31])+'''",
      "lesson_language": "'''+rows[33]+'''",
      "whiteboard_image": "'''+convert_base_64(imageroot+rows[36])+'''",
      "application_video_link": "'''+rows[34]+'''",
-     "application_video_running_notes": "'''+rows[35].replace("\n", "~")+'''"
+     "application_video_running_notes": "'''+make_json_ready(rows[35])+'''"
  }'''
  return data
+
+def make_json_ready(text):
+    json_ready_string = text.replace("\n","~")
+    json_ready_string = json_ready_string.replace("\"","|")
+    return json_ready_string
+
+def make_data_ready(text):
+    data_ready_string = text.replace("~","\n")
+    data_ready_string = data_ready_string.replace("|","\"")
+    return data_ready_string
 
 def get_token(username, password):
 
@@ -191,12 +201,24 @@ def update_lesson_details(json_object):
     if whiteboard_image is not None:
         whiteboard_filename = constructfilename(whiteboard_image, "whiteboard")
 
-    json_object["title_description"] = json_object["title_description"].replace("~", "\n")
-    json_object["term1_description"] = json_object["term1_description"].replace("~", "\n")
-    json_object["term2_description"] = json_object["term2_description"].replace("~", "\n")
-    json_object["term3_description"] = json_object["term3_description"].replace("~", "\n")
-    json_object["questions"] = json_object["questions"].replace("~", "\n")
-    json_object["application_video_running_notes"] = json_object["application_video_running_notes"].replace("~", "\n")
+    json_object["title_description"] = make_data_ready(json_object["title_description"])
+    json_object["term1_description"] = make_data_ready(json_object["term1_description"])
+    json_object["term2_description"] = make_data_ready(json_object["term2_description"])
+    json_object["term3_description"] = make_data_ready(json_object["term3_description"])
+    json_object["term1"] = make_data_ready(json_object["term1"])
+    json_object["term2"] = make_data_ready(json_object["term2"])
+    json_object["term3"] = make_data_ready(json_object["term3"])
+    json_object["questions"] = make_data_ready(json_object["questions"])
+    json_object["application_video_running_notes"] = make_data_ready(json_object["application_video_running_notes"])
+    json_object["title"] = make_data_ready(json_object["title"])
+    json_object["step1_description"] = make_data_ready(json_object["step1_description"])
+    json_object["step2_description"] = make_data_ready(json_object["step2_description"])
+    json_object["step3_description"] = make_data_ready(json_object["step3_description"])
+    json_object["step4_description"] = make_data_ready(json_object["step4_description"])
+    json_object["step5_description"] = make_data_ready(json_object["step5_description"])
+    json_object["step6_description"] = make_data_ready(json_object["step6_description"])
+    json_object["step7_description"] = make_data_ready(json_object["step7_description"])
+    json_object["step8_description"] = make_data_ready(json_object["step8_description"])
 
     query_parameters = [json_object["title"],title_filename,json_object["title_video"],json_object["title_description"],
                         json_object["term1"],json_object["term1_description"],term1_filename,json_object["term2"],json_object["term2_description"],term2_filename,

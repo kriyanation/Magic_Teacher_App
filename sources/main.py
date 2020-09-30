@@ -5,6 +5,7 @@ import shutil
 
 import traceback
 import random
+import webbrowser
 from threading import Thread
 
 from kivy.graphics import Color, Line
@@ -59,9 +60,13 @@ class LessonListScreen(Screen):
         self.button_list = []
         self.ids.lesson_c.bind(minimum_height=self.ids.lesson_c.setter('height'))
         for element in self.list_lessons:
-            button = Button(text=element[1], background_color=[0.76, 0.83, 0.86, 0.8], pos_hint={'top': 1},
+            if element[2] is None or element[2] == "" or element[2] =="English":
+                font_name = "Caveat-Bold.ttf"
+            else:
+                font_name = "unifont.ttf"
+            button = Button(text=element[1], font_name = font_name,font_size='30sp',background_color=[0.76, 0.83, 0.86, 0.8], pos_hint={'top': 1},
                             size_hint_y=None, size_hint_x=1)
-            button.on_release = lambda instance=button, a=element[0]: self.switch_to_title(instance, a)
+            button.on_release = lambda instance=button, a=element[0],b=element[2]: self.switch_to_title(instance, a,b)
             self.ids.lesson_c.add_widget(button)
             self.button_list.append(button)
 
@@ -74,14 +79,18 @@ class LessonListScreen(Screen):
         # open popup window
         self.popupWindow.open()
 
-    def switch_to_title(self, i, a):
+    def switch_to_title(self, i, a,b):
         self.selected_lesson = a
+        if b is None or b == "" or b == "English":
+            self.manager.set_font("Caveat-Bold.ttf")
+        else:
+            self.manager.set_font("unifont.ttf")
         self.manager.current = "title"
 
     def launch_popup(self):
         show = CreatePop()
         self.popupWindow = Popup(title="Create Mini Lesson", content=show,
-                                 size_hint=(1, 0.2), auto_dismiss=False)
+                                 size_hint=(1, 0.7), auto_dismiss=False)
         show.set_popupw(self.popupWindow)
         show.set_screen_instance(self)
         # open popup window
@@ -156,26 +165,45 @@ class ImportPop(BoxLayout):
 
 class ScreenManagement(ScreenManager):
     lesson_dictionary = {}
+    lesson_lang = ""
+    lesson_font = StringProperty()
+    def set_lang(self,text):
+        self.lesson_lang = text
+    def get_lang(self):
+        return self.lesson_lang
+    def set_font(self,text):
+        self.lesson_font = text
+    def get_font(self):
+        return self.lesson_font
+
+
     pass
 
 
 class CreatePop(BoxLayout):
     text_lesson_name = StringProperty()
+    text_lesson_font = StringProperty("Caveat-Bold.ttf")
 
     def __init__(self, **kwargs):
         super(CreatePop, self).__init__(**kwargs)
 
     def create_lesson(self, *args):
-        if hasattr("self","lang_lesson") == False:
+        if hasattr(self,"lang_lesson") == False:
             self.lang_lesson = "English"
+
 
         data_capture_lessons.create_lesson(self.text_lesson_name,self.lang_lesson)
         self.listscreen.ids.lesson_c.clear_widgets()
+
         self.listscreen.add_buttons(1)
         self.close_pop()
     def on_select_lang(self,text):
         self.lang_lesson = text
+        if text != "English":
+            self.text_lesson_font = "unifont.ttf"
+
     def close_pop(self, *args):
+
         self.popw.dismiss()
 
     def set_screen_instance(self, listscreen):
@@ -223,6 +251,7 @@ class LessonTitleScreen(Screen):
     text_label_2 = StringProperty()
     text_image = StringProperty()
     animation_count = NumericProperty()
+    font_name = StringProperty("Caveat-Bold.ttf")
 
     def __init__(self, **kwargs):
         super(LessonTitleScreen, self).__init__(**kwargs)
@@ -265,6 +294,7 @@ class LessonTitleScreen(Screen):
 
     def on_enter(self):
         self.lessonid = self.manager.get_screen('lessons').selected_lesson
+        self.font_name = self.manager.get_font()
         title, title_image, title_running_notes = data_capture_lessons.get_title_info(self.lessonid)
         if title_running_notes is not None:
             self.text_label_1 = title_running_notes
@@ -455,7 +485,7 @@ class imgpopup(Popup):
             return imagefile
         else:
             w, h = img.size
-            img = img.resize(w / 2, h / 2, Image.ANTIALIAS)
+            img = img.resize(w / 2, h / 2)
             img.save("titletmp")
             self.file_resize("titletmp")
 
@@ -538,6 +568,7 @@ class LessonFactualScreen(Screen):
     text_image_2 = StringProperty()
     text_image_3 = StringProperty()
     text_image_display = StringProperty()
+    font_name = StringProperty("Caveat-Bold.ttf")
 
     text_term_description_1 = StringProperty()
     text_term_description_2 = StringProperty()
@@ -551,6 +582,7 @@ class LessonFactualScreen(Screen):
 
     def on_enter(self):
         self.lessonid = self.manager.get_screen('lessons').selected_lesson
+        self.font_name = self.manager.get_font()
         self.display_index = 0
         self.draw_Screen()
         self.text_image_display = self.text_image_1
@@ -695,6 +727,7 @@ class LessonFactualScreen(Screen):
 class LessonApplyScreen(Screen):
     text_label_1 = StringProperty("Dynamic Text" + str(random.randint(1, 100)))
     text_label_2 = StringProperty("test.png")
+    font_name = StringProperty("Caveat-Bold.ttf")
     steps = ObjectProperty(None)
     text_image_0 = StringProperty()
     stepimage0 = ObjectProperty()
@@ -712,6 +745,7 @@ class LessonApplyScreen(Screen):
     def on_enter(self):
 
         self.lessonid = self.manager.get_screen('lessons').selected_lesson
+        self.font_name = self.manager.get_font()
         self.number_of_steps = data_capture_lessons.get_number_of_steps(self.lessonid)
         self.step_list = data_capture_lessons.get_description_list(self.lessonid)
         self.image_list = data_capture_lessons.get_step_image_list(self.lessonid)
@@ -748,42 +782,42 @@ class LessonApplyScreen(Screen):
             if i == 0:
                 self.text_input_0 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',pos_hint={'center_y':0.5})
+                                       font_size='18sp',font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.bx_layout.add_widget(self.text_input_0)
             elif i == 1:
                 self.text_input_1 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',pos_hint={'center_y':0.5})
+                                       font_size='18sp',font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.bx_layout.add_widget(self.text_input_1)
             elif i == 2:
                 self.text_input_2 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',pos_hint={'center_y':0.5})
+                                       font_size='18sp',font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.bx_layout.add_widget(self.text_input_2)
             elif i == 3:
                 self.text_input_3 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',pos_hint={'center_y':0.5})
+                                       font_size='18sp', font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.bx_layout.add_widget(self.text_input_3)
             elif i == 4:
                 self.text_input_4 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',pos_hint={'center_y':0.5})
+                                       font_size='18sp',font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.bx_layout.add_widget(self.text_input_4)
             elif i == 5:
                 self.text_input_5 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',pos_hint={'center_y':0.5})
+                                       font_size='18sp',font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.bx_layout.add_widget(self.text_input_5)
             elif i == 6:
                 self.text_input_6 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',pos_hint={'center_y':0.5})
+                                       font_size='18sp',font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.bx_layout.add_widget(self.text_input_6)
             elif i == 7:
                 self.text_input_7 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',pos_hint={'center_y':0.5})
+                                       font_size='18sp',font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.bx_layout.add_widget(self.text_input_7)
 
             image_button = Button(text="Image",size_hint = (0.1,0.2),pos_hint={'center_y':0.5})
@@ -863,13 +897,15 @@ class CWidget(Widget):
     pencolor = ListProperty([0, 1, 1, 1])
     line_width = 3
     text_button = StringProperty()
+    font_name = StringProperty("Caveat-Bold.ttf")
     def __init__(self,**kwargs):
         super().__init__(**kwargs)
         self.text_button = "erase"
         self.start_flag = False
+        self.font_name = self.manager.get_font()
 
     def show_text(self,*args):
-        self.tlabel = Label(text=self.input_text.text,pos=self.location,font_size='35sp',color=[1,0,0,0.9])
+        self.tlabel = Label(text=self.input_text.text,pos=self.location,font_size='35sp',font_name=self.font_name,color=[1,0,0,0.9])
         self.add_widget(self.tlabel)
 
         self.popup.dismiss()
@@ -879,7 +915,7 @@ class CWidget(Widget):
             print("double tap")
             self.location = (touch.x,touch.y)
             self.blayout = BoxLayout()
-            self.input_text = TextInput()
+            self.input_text = TextInput(font_name=self.font_name,font_size="20sp")
             self.input_button = Button(text="Add Text",on_release=self.show_text)
             self.blayout.add_widget(self.input_text)
             self.blayout.add_widget(self.input_button)
@@ -942,11 +978,12 @@ class LessonWhiteboardScreen(Screen):
 
 class LessonNotesScreen(Screen):
     text_label_1 = StringProperty()
-
+    font_name = StringProperty("Caveat-Bold.ttf")
 
     def __init__(self, **kwargs):
         super(LessonNotesScreen, self).__init__(**kwargs)
         Window.bind(on_keyboard=self.on_key)
+        self.font_name = self.manager.get_font()
 
     def on_key(self, window, key, *args):
         if key == 27:  # the esc key
@@ -992,15 +1029,23 @@ class PublishPop(Popup):
         logintoken = data_lessons.get_token(user, pwd)
         return logintoken
 
+    def get_token(self, user, pwd):
+        logintoken = data_lessons.get_token(user, pwd)
+        return logintoken
+    def register_user(self):
+        webbrowser.open("https://thelearningroom.el.r.appspot.com/")
+
 
 class LessonAssessScreen(Screen):
     text_label_1 = StringProperty()
     text_label_2 = StringProperty()
+    font_name = StringProperty("Caveat-Bold.ttf")
 
 
     def __init__(self, **kwargs):
         super(LessonAssessScreen, self).__init__(**kwargs)
         Window.bind(on_keyboard=self.on_key)
+        self.font_name = self.manager.get_font()
 
     def on_key(self, window, key, *args):
         if key == 27:  # the esc key
@@ -1054,6 +1099,32 @@ class MagicTeacherApp(App):
     def build(self):
         # self.icon = 'lr_logo.png'
         return ScreenManagement()
+
+from jnius import autoclass, cast
+
+
+def open_url(url):
+    Intent = autoclass('android.content.Intent')
+    PythonActivity = autoclass('org.kivy.android.PythonActivity')
+    activity = PythonActivity.mActivity
+    Uri = autoclass('android.net.Uri')
+    browserIntent = Intent()
+    browserIntent.setAction(Intent.ACTION_VIEW)
+    browserIntent.setData(Uri.parse(url))
+    currentActivity = cast('android.app.Activity', activity)
+    currentActivity.startActivity(browserIntent)
+
+class AndroidBrowser(object):
+    def open(self, url, new=0, autoraise=True):
+        open_url(url)
+
+    def open_new(self, url):
+        open_url(url)
+
+    def open_new_tab(self, url):
+        open_url(url)
+
+webbrowser.register('android', AndroidBrowser)
 
 
 MagicTeacherApp().run()

@@ -11,7 +11,7 @@ def get_Lessons():
     print (db)
     connection = sqlite3.connect(db)
     cur = connection.cursor()
-    sql = "select Lesson_ID, Lesson_Title from Magic_Science_Lessons"
+    sql = "select Lesson_ID, Lesson_Title, Title_Notes_Language from Magic_Science_Lessons"
     cur.execute(sql)
     rows = cur.fetchall()
     list_lessons = []
