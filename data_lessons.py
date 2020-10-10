@@ -9,7 +9,7 @@ import requests,json
 
 import data_capture_lessons
 
-file_root = os.path.abspath(os.path.join(os.getcwd(),".."))
+file_root = os.path.abspath(os.path.join(os.getcwd()))
 
 
 def convert_base_64(imagefile):
@@ -40,13 +40,16 @@ def delete_lesson(lesson_id):
 
 def prepare_lesson_share(lesson_id):
  class_id, User = data_capture_lessons.get_user_classid()
+ userid = data_capture_lessons.get_userid(lesson_id)
  rows = data_capture_lessons.get_lessons_for_share(lesson_id)
  imageroot = file_root+os.path.sep+"Lessons"+os.path.sep+"Lesson"+str(lesson_id)+os.path.sep+"images"+os.path.sep
+
+
 
  data = '''{
      "lesson_id": "''' +str(rows[0])+'''",
      "class_id": "''' +str(class_id)+'''",
-     "user": "http://learning-room-285708.el.r.appspot.com/auth/users/'''+str(User)+'''/",
+     "user": "http://127.0.0.1:8000//auth/users/'''+str(1)+'''/",
      "title": "''' +make_json_ready(rows[1])+'''",
      "title_image": "''' + convert_base_64(imageroot+rows[2]) + '''",
      "title_video": null,
@@ -86,8 +89,10 @@ def prepare_lesson_share(lesson_id):
  return data
 
 def make_json_ready(text):
+    print("###"+text)
     json_ready_string = text.replace("\n","~")
     json_ready_string = json_ready_string.replace("\"","|")
+    json_ready_string = json_ready_string.replace("\t", " ")
     return json_ready_string
 
 def make_data_ready(text):
@@ -98,41 +103,67 @@ def make_data_ready(text):
 def get_token(username, password):
 
    url = 'https://thelearningroom.el.r.appspot.com/auth/token/login'
+   #url = "http://127.0.0.1:8000/auth/token/login"
    json_string = '''{
                       "username":"'''+username+'''",
                       "password":"'''+password+'''"
                     }'''
    headers = {'Content-Type':'application/json'}
-   response = requests.post(url,headers=headers,data=json_string)
+   try:
+     response = requests.post(url,headers=headers,data=json_string)
+   except:
+       return "Login_Failed"
    if response.status_code != 200:
-       return "error"
+       return "Login_Failed"
    json_object = json.loads(response.content)
    return json_object["auth_token"]
 
 
-def post_lesson(data, token,lesson_id):
+def post_lesson(call_screen,data, token,lesson_id):
     try:
+        post_status = ""
+        userid = ""
         json_object = json.loads(data)
         class_id, User = data_capture_lessons.get_user_classid()
+        #first get the user id of the logged in user
         headers = {'Content-Type': 'application/json', 'Authorization': 'Token '+token}
+        url_user = "https://thelearningroom.el.r.appspot.com/lesson/currentuser/"
+        response_user = requests.get(url_user, headers=headers)
+        if response_user.status_code == 200:
+            userjson = json.loads(response_user.content)
+            userid = userjson["id"]
+            json_object['user']= "https://thelearningroom.el.r.appspot.com/auth/users/"+str(userid)+"/"
+            data = json.dumps(json_object)
         url_root = "https://thelearningroom.el.r.appspot.com/"
-        url = "https://thelearningroom.el.r.appspot.com/lesson/?username="+str(User)+"&lesson_id="+json_object['lesson_id']+"&class_id="+json_object['class_id']
-        response_get =  requests.get(url,headers=headers)
+        #url_root = "http://127.0.0.1:8000/"
+        url = "https://thelearningroom.el.r.appspot.com/lesson/lesson/?username="+str(userid)+"&lesson_id="+json_object['lesson_id']+"&class_id="+json_object['class_id']
+        #url = "http://127.0.0.1:8000/lesson/lesson/?username="+str(userid)+"&lesson_id="+json_object['lesson_id']+"&class_id="+json_object['class_id']
+        response_get = requests.get(url,headers=headers)
         json_object_get = json.loads(response_get.content)
-        if response_get.status_code==200 and len(json_object_get) > 0:
+        if response_get.status_code==200 and len(json_object_get) > 0 and "global_lesson_id" in json_object_get[0]:
             global_lesson_id = json_object_get[0]["global_lesson_id"]
-            url_put = url_root+"lesson/"+str(global_lesson_id)+"/?username="+str(User)+"&lesson_id="+str(json_object['lesson_id'])+"&class_id="+str(json_object['class_id'])
+            url_put = url_root+"lesson/lesson/"+str(global_lesson_id)+"/?username="+str(userid)+"&lesson_id="+str(json_object['lesson_id'])+"&class_id="+str(json_object['class_id'])
             response = requests.patch(url_put, headers=headers, data=data.encode('utf-8'))
         else:
-            response = requests.post(url,headers=headers,data =data.encode('utf-8'))
+            response = requests.post(url,headers=headers,data=data.encode('utf-8'))
             print(response.status_code)
             print(response.text)
-        if response.status_code==201:
-            data_capture_lessons.update_shared(lesson_id)
+
+        if response.status_code==201 :
+            data = response.content
+
+            data_capture_lessons.update_shared(lesson_id,userid)
+            post_status = "The lesson has been posted with following details\n Lesson ID:"+str(lesson_id)+" Class ID: "+str(class_id)+" User ID: "+str(userid)
+        elif response.status_code==200:
+            data_capture_lessons.update_shared(lesson_id, userid)
+            post_status = "The lesson has been posted with following details\n Lesson ID:" + str(lesson_id) + " Class ID: " + str(class_id) + " User ID: " + str(userid)
+        else:
+            post_status = response.text
         url_logout= url_root+"auth/token/logout/"
         response_logout = requests.post(url_logout, headers=headers)
         print(response_logout.content)
-
+        call_screen.response_status(post_status)
+        return post_status
     except Exception:
         print(traceback.print_exc())
         print("exception")
@@ -142,7 +173,7 @@ def import_new_lesson(user,classid,lessonid):
 
     url_root = "https://thelearningroom.el.r.appspot.com/"
     headers = {'Content-Type': 'application/json'}
-    url = url_root+"lesson/?username=" + user + "&lesson_id=" + lessonid + "&class_id=" + classid
+    url = url_root+"lesson/lesson/?username=" + user + "&lesson_id=" + lessonid + "&class_id=" + classid
     response_get = requests.get(url, headers=headers)
     response_object_get = json.loads(response_get.content)
     if response_get.status_code == 200 and len(response_object_get) > 0:

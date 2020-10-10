@@ -1,5 +1,6 @@
 
 import os
+import random
 import sqlite3
 import traceback
 
@@ -20,6 +21,16 @@ def get_Lessons():
     connection.commit()
     connection.close()
     return list_lessons
+
+def get_lesson_lanugage(lessonid):
+    connection = sqlite3.connect(db)
+    cur = connection.cursor()
+    sql = "select Title_Notes_Language from Magic_Science_Lessons where Lesson_ID=?"
+    cur.execute(sql, (lessonid,))
+    rows = cur.fetchone()
+    connection.commit()
+    connection.close()
+    return rows[0]
 
 
 def get_lessons_for_share(lesson_id):
@@ -46,11 +57,11 @@ def get_user_classid():
     return rows[0],rows[1]
 
 
-def update_shared(lesson_id):
+def update_shared(lesson_id,userid):
     connection = sqlite3.connect(db)
     cur = connection.cursor()
-    sql = "update Magic_Science_Lessons set Shared_Flag=1 where Lesson_ID=?"
-    cur.execute(sql, (lesson_id,))
+    sql = "update Magic_Science_Lessons set Shared_Flag=1,UserID=? where Lesson_ID=?"
+    cur.execute(sql, (userid,lesson_id))
     connection.commit()
     connection.close()
 
@@ -58,6 +69,16 @@ def is_shared(lesson_id):
     connection = sqlite3.connect(db)
     cur = connection.cursor()
     sql = "select Shared_Flag from Magic_Science_Lessons where Lesson_ID=?"
+    cur.execute(sql, (lesson_id,))
+    rows = cur.fetchone()
+    connection.commit()
+    connection.close()
+    return rows[0]
+
+def get_userid(lesson_id):
+    connection = sqlite3.connect(db)
+    cur = connection.cursor()
+    sql = "select UserID from Magic_Science_Lessons where Lesson_ID=?"
     cur.execute(sql, (lesson_id,))
     rows = cur.fetchone()
     connection.commit()
@@ -228,6 +249,7 @@ def create_lesson(text_lesson_name,lang):
         return 1
 
 
+
 def save_changes(lesson_id,text_image, text_label_1, text_label_2):
     try:
         connection = sqlite3.connect(db)
@@ -282,7 +304,7 @@ def save_step_texts(lessonid, text1, text2, text3, text4, text5, text6, text7, t
     try:
         connection = sqlite3.connect(db)
         cur = connection.cursor()
-        sql = ("update Magic_Science_Lessons set Application_Step_Description_1=?,Application_Step_Description_2=?,Application_Step_Description_3=?,"
+        sql = ("update Magic_Science_Lessons set Application_Steps_Number=8,Application_Step_Description_1=?,Application_Step_Description_2=?,Application_Step_Description_3=?,"
                "Application_Step_Description_4=?,Application_Step_Description_5=?,Application_Step_Description_6=?,Application_Step_Description_7=?,"
                "Application_Step_Description_8=? where Lesson_ID = ?")
         cur.execute(sql, (text1,text2,text3,text4,text5,text6,text7,text8, lessonid))
@@ -378,6 +400,33 @@ def set_form_link(lessonid, text_label_2):
         sql = ("update Magic_Science_Lessons set Application_Video_Link = ? where Lesson_ID = ?")
         cur.execute(sql,(text_label_2,lessonid))
         connection.commit()
+        return 0
+    except sqlite3.OperationalError:
+        traceback.print_exc()
+        return 1
+
+def get_classid():
+    try:
+        connection = sqlite3.connect(db)
+        cur = connection.cursor()
+        sqlsel = ("select class_id from Magic_Teacher_Data where Class_No=1")
+        cur.execute(sqlsel)
+        rows = cur.fetchone()
+        connection.close()
+        return rows
+    except sqlite3.OperationalError:
+        traceback.print_exc()
+        return 1
+
+def set_classid():
+    try:
+        number = random.randint(10000, 99999)
+        connection = sqlite3.connect(db)
+        cur = connection.cursor()
+        sql = ("update Magic_Teacher_Data set class_id=? where Class_No=1")
+        cur.execute(sql,(number,))
+        connection.commit()
+        connection.close()
         return 0
     except sqlite3.OperationalError:
         traceback.print_exc()

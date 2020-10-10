@@ -93,8 +93,8 @@
         orientation: 'vertical'
         GridLayout:
             cols:2
-            #row_force_default:True
-            #row_default_height:40
+            row_force_default:True
+            row_default_height:100
             padding:[20,20,20,20]
             spacing:[20,20]
             Label:
@@ -132,7 +132,7 @@
                 background_color:[0.76,0.83,0.86,0.8]
 
             Button:
-                text: 'Cancel'
+                text: 'Close'
                 size_hint_x:0.2
                 size_hint_y:0.8
                 on_release: root.dismiss()
@@ -141,15 +141,18 @@
             Button:
                 text: 'Register'
                 anchor_x:"center"
-                size_hint_x:0.2
-                size_hint_y:0.2
+                size_hint_x:0.3
+                size_hint_y:0.25
                 halign:"center"
                 on_release: root.register_user()
                 background_color:[0.76,0.83,0.86,0.8]
-        Label:
-            text: root.text_status
-            size_hint:(1,0.2)
-            text_size:(self.width,None)
+        AnchorLayout:
+            Label:
+                text: root.text_status
+                size_hint:(1,0.2)
+                anchor_x:"center"
+                halign:"center"
+                text_size:(self.width,None)
 
 <CreatePop>
     text_lesson_name: create.text
@@ -187,7 +190,8 @@
             multiline: False
             size_hint_x:0.3
             font_name:root.text_lesson_font
-            font_size:'20sp'
+            on_text:root.on_title_text(self,self.text)
+            font_size:'25sp'
 
         Button:
             text: 'Create'
@@ -232,6 +236,7 @@
                 halign:"left"                              #default value showed
                 text_size:(300, None)
                 values: root.lesson_list      #list of values to show
+                font_name:"unifont.ttf"
                 option_cls: Factory.get("DelSpinnerOption")
                 on_text:
                     root.on_select_lesson(self.text)
@@ -365,6 +370,7 @@
 
 <imgurlpopup>:
     url_txt:url_txt
+
     size_hint:(0.9,0.8)
     title: "Image Link"
     auto_dismiss:False
@@ -381,9 +387,16 @@
                 size_hint:(0.15,0.3)
                 text:"Link"
             TextInput:
+
                 pos_hint: {'top':1}
                 id:url_txt
                 size_hint:(0.25,0.25)
+
+            Button:
+                pos_hint: {'top':1}
+                size_hint:(0.15,0.25)
+                text: "Paste"
+                on_release:root.url_txt.paste()
 
             Button:
                 pos_hint: {'top':1}
@@ -478,9 +491,10 @@
                 text: root.text_label_2
                 size_hint: (1,0.1)
                 text_size:(self.width,None)
-                font_size:'25sp'
+                font_size:'30sp'
                 font_name:root.font_name
                 halign:"center"
+                on_text:root.on_title_text(self,self.text)
             BoxLayout:
                 orientation:'vertical'
                 Image:
@@ -505,12 +519,12 @@
                 #TextInput:
                 TextInput:
                     id:text_description
-                    font_size:'20sp'
+                    font_size:'25sp'
                     font_name : root.font_name
                     background_color:[0.76,0.83,0.86,0.8]
 
                     height: max(self.minimum_height, scrlv.height)
-
+                    on_text:root.on_title_desc_text(self,self.text)
                     text:root.text_label_1
                     size_hint_y: None
                     halign:"center"
@@ -575,7 +589,8 @@
                 id:term
                 text:root.text_term_display
                 font_name:root.font_name
-                font_size:"20sp"
+                on_text:root.on_term_text(self,self.text)
+                font_size:"25sp"
                 size_hint:(1,0.1)
                 halign:"center"
 
@@ -588,7 +603,8 @@
                     text:root.text_term_description
                     text_size: self.width, None
                     font_name:root.font_name
-                    font_size: "20sp"
+                    on_text:root.on_description_text(self,self.text)
+                    font_size: "25sp"
                     height: max(self.minimum_height, scrlv.height)
                     halign:"center"
                     valign:"top"
@@ -634,9 +650,10 @@
 <LessonWhiteboardScreen>
     cw:cw
     sv:sv
+    blay:blay
 
     BoxLayout:
-
+        id:blay
         orientation: 'vertical'
         ActionBar:
 
@@ -705,7 +722,8 @@
                 id:txt
                 size_hint:(1,None)
                 hint_text:"Descriptive Texts and Explanations"
-                font_size:"20sp"
+                font_size:"25sp"
+                on_text:root.on_description_text(self,self.text)
                 font_name : root.font_name
                 multiline:True
                 text_size: self.width, None
@@ -719,6 +737,7 @@
 
 <LessonAssessScreen>
     text_label_1: txt.text
+    text_label_2: txt_form.text
     BoxLayout:
         orientation: 'vertical'
         ActionBar:
@@ -743,8 +762,9 @@
                 id:txt
                 size_hint:(1,None)
                 hint_text:"Questions for Assessment"
-                font_size:"20sp"
+                font_size:"25sp"
                 font_name:root.font_name
+                on_text:root.on_description_text(self,self.text)
                 multiline:True
                 text_size: self.width, None
                 height: max(self.minimum_height, scrlv.height)
@@ -753,7 +773,7 @@
             id:txt_form
             size_hint:(1,0.1)
             hint_text:"Google Form Link"
-            font_size:"20sp"
+            font_size:"25sp"
             multiline:False
             text_size: self.width, None
 

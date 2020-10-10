@@ -3,6 +3,8 @@ import ntpath
 import os
 import shutil
 
+
+from PIL import Image
 import traceback
 import random
 import webbrowser
@@ -15,6 +17,8 @@ from kivy.uix.label import Label
 from kivy.uix.progressbar import ProgressBar
 from kivy.uix.textinput import TextInput
 from kivy.uix.widget import Widget
+from indic_transliteration import sanscript, xsanscript
+from indic_transliteration.sanscript import transliterate
 
 
 import requests
@@ -36,8 +40,11 @@ import data_lessons
 import image_utils
 import certifi
 
+
 # Here's all the magic !
 os.environ['SSL_CERT_FILE'] = certifi.where()
+
+
 Window.softinput_mode = 'below_target'
 
 class LessonListScreen(Screen):
@@ -186,6 +193,8 @@ class CreatePop(BoxLayout):
 
     def __init__(self, **kwargs):
         super(CreatePop, self).__init__(**kwargs)
+        self.lang_lesson = "English"
+
 
     def create_lesson(self, *args):
         if hasattr(self,"lang_lesson") == False:
@@ -193,6 +202,9 @@ class CreatePop(BoxLayout):
 
 
         data_capture_lessons.create_lesson(self.text_lesson_name,self.lang_lesson)
+        os.mkdir("Lessons/Lesson" + str(self.lessonid))
+        os.mkdir("Lessons/Lesson" + str(self.lessonid) + "/images")
+        shutil.copyfile("placeholder.png", "Lessons/Lesson" + str(self.lessonid) + "/images/placeholder.png")
         self.listscreen.ids.lesson_c.clear_widgets()
 
         self.listscreen.add_buttons(1)
@@ -201,6 +213,13 @@ class CreatePop(BoxLayout):
         self.lang_lesson = text
         if text != "English":
             self.text_lesson_font = "unifont.ttf"
+
+    def on_title_text(self,wid,text):
+        if text is not None and len(text) > 0 and text[-1] == " " and self.lang_lesson != "English":
+            text = text.strip()
+            output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
+            output = output
+            wid.text = output
 
     def close_pop(self, *args):
 
@@ -255,7 +274,7 @@ class LessonTitleScreen(Screen):
 
     def __init__(self, **kwargs):
         super(LessonTitleScreen, self).__init__(**kwargs)
-        self.speak_flag = 0
+
         Window.bind(on_keyboard=self.on_key)
 
     def on_key(self, window, key, *args):
@@ -266,6 +285,18 @@ class LessonTitleScreen(Screen):
 
     def read_intro(self, sb_button):
         pass
+    def on_title_text(self,wid,text):
+        if text is not None and len(text) > 0 and text[-1] == " " and self.lesson_language != "English":
+           text = text.strip()
+           output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
+           output = output+" "
+           wid.text = output
+    def on_title_desc_text(self,wid,text):
+        if text is not None and len(text) > 0 and text[-1] == " " and self.lesson_language != "English":
+           text = text.strip()
+           output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
+           output = output+" "
+           wid.text = output
 
     def animate(self, dt):
         # create an animation object. This object could be stored
@@ -294,20 +325,27 @@ class LessonTitleScreen(Screen):
 
     def on_enter(self):
         self.lessonid = self.manager.get_screen('lessons').selected_lesson
+        self.lesson_language = data_capture_lessons.get_lesson_lanugage(self.lessonid)
         self.font_name = self.manager.get_font()
         title, title_image, title_running_notes = data_capture_lessons.get_title_info(self.lessonid)
         if title_running_notes is not None:
             self.text_label_1 = title_running_notes
+        else:
+            self.text_label_1 = ""
         if title is not None:
             self.text_label_2 = title
+        else:
+            self.text_label_2 = ""
         if title_image is not None:
             #imagepath = "Lessons/Lesson" + str(self.lessonid) + "/images/" + title_image
             imagepath = "Lessons/Lesson" +str(self.lessonid)+ "/images/" + title_image
             if os.path.exists(imagepath) and title_image != "":
                 self.text_image = imagepath
             else:
+
                 self.text_image = "placeholder.png"
         else:
+
             self.text_image = "placeholder.png"
         Clock.schedule_interval(self.animate, 2)
 
@@ -319,7 +357,12 @@ class LessonTitleScreen(Screen):
 
     def set_next_screen(self):
         if self.manager.current == 'title':
-            data_capture_lessons.save_changes(self.lessonid,ntpath.basename(self.text_image),self.text_label_1,self.text_label_2)
+            if self.text_label_1 is None:
+                self.text_label_1 = ""
+            if self.text_label_2 is None:
+                self.text_label_2 = ""
+
+            data_capture_lessons.save_changes(self.lessonid,ntpath.basename(self.text_image),self.text_label_2,self.text_label_1)
             self.manager.transition.direction = 'left'
             self.manager.current = self.manager.next()
 
@@ -576,12 +619,26 @@ class LessonFactualScreen(Screen):
     text_term_description = StringProperty()
     text_term_display = StringProperty()
 
+    def on_term_text(self, wid, text):
+        if text is not None and len(text) > 0 and text[-1] == " " and self.lesson_language != "English":
+            text = text.strip()
+            output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
+            output = output
+            wid.text = output
+
+    def on_description_text(self, wid, text):
+        if text is not None and len(text) > 0 and text[-1] == " " and self.lesson_language != "English":
+            text = text.strip()
+            output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
+            output = output
+            wid.text = output
     def __init__(self, **kwargs):
         super(LessonFactualScreen, self).__init__(**kwargs)
         Window.bind(on_keyboard=self.on_key)
 
     def on_enter(self):
         self.lessonid = self.manager.get_screen('lessons').selected_lesson
+        self.lesson_language = data_capture_lessons.get_lesson_lanugage(self.lessonid)
         self.font_name = self.manager.get_font()
         self.display_index = 0
         self.draw_Screen()
@@ -653,6 +710,10 @@ class LessonFactualScreen(Screen):
 
 
     def load_next(self):
+        if self.text_term_display is None:
+            self.text_term_display = ""
+        if self.text_term_description is None:
+            self.text_term_description = ""
 
         if self.display_index == 3:
             self.display_index = 0
@@ -717,12 +778,61 @@ class LessonFactualScreen(Screen):
 
     def set_next_screen(self):
         if self.manager.current == 'factual':
+            self.update_current_values()
+            self.update_empty_values()
             self.manager.transition.direction = 'left'
             self.manager.current = self.manager.next()
     def launch_image_selector(self):
         self.popup_imageselect = ImageSelectPop(self,self.display_index)
 
         self.popup_imageselect.open()
+
+    def update_current_values(self):
+        if self.text_term_display is None:
+            self.text_term_display = ""
+        if self.text_term_description is None:
+            self.text_term_description = ""
+
+        if self.display_index == 0:
+            data_capture_lessons.update_term1(self.lessonid, os.path.basename(self.text_image_display),
+                                              self.text_term_description, self.text_term_display)
+
+        elif self.display_index == 1:
+            data_capture_lessons.update_term2(self.lessonid, os.path.basename(self.text_image_display),
+                                              self.text_term_description,
+                                              self.text_term_display)
+
+
+        else:
+            data_capture_lessons.update_term3(self.lessonid, os.path.basename(self.text_image_display),
+                                              self.text_term_description,
+                                              self.text_term_display)
+
+    def update_empty_values(self):
+        self.textimage_1, self.textimage_2, self.textimage_3 = data_capture_lessons.get_fact_images(self.lessonid)
+        self.text_term_1, self.text_term_2, self.text_term_3 = data_capture_lessons.get_fact_terms(self.lessonid)
+        self.textterm_description_1, self.textterm_description_2, self.textterm_description_3 = data_capture_lessons.get_fact_descriptions(
+            self.lessonid)
+        if self.textimage_2 is None or self.textimage_2 == "":
+            self.textimage_2 = "placeholder.png"
+        if self.textimage_3 is None or self.textimage_3 == "":
+            self.textimage_3 = "placeholder.png"
+        if self.text_term_2 is None:
+            self.text_term_2 = ""
+        if self.text_term_3 is None:
+            self.text_term_3 = ""
+        if self.textterm_description_2 is None:
+            self.textterm_description_2 = ""
+        if self.textterm_description_3 is None:
+            self.textterm_description_3 = ""
+
+
+        data_capture_lessons.update_term2(self.lessonid, self.textimage_2,
+                                          self.textterm_description_2,
+                                          self.text_term_2)
+        data_capture_lessons.update_term3(self.lessonid, self.textimage_3,
+                                          self.textterm_description_3,
+                                          self.text_term_3)
 
 class LessonApplyScreen(Screen):
     text_label_1 = StringProperty("Dynamic Text" + str(random.randint(1, 100)))
@@ -745,6 +855,7 @@ class LessonApplyScreen(Screen):
     def on_enter(self):
 
         self.lessonid = self.manager.get_screen('lessons').selected_lesson
+        self.lesson_language = data_capture_lessons.get_lesson_lanugage(self.lessonid)
         self.font_name = self.manager.get_font()
         self.number_of_steps = data_capture_lessons.get_number_of_steps(self.lessonid)
         self.step_list = data_capture_lessons.get_description_list(self.lessonid)
@@ -770,6 +881,12 @@ class LessonApplyScreen(Screen):
             self.manager.transition.direction = 'left'
             self.manager.current = self.manager.next()
 
+    def on_description_text(self, wid, text):
+        if text is not None and len(text) > 0 and text[-1] == " " and self.lesson_language != "English":
+            text = text.strip()
+            output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
+            output = output
+            wid.text = output
     def add_steps_buttons(self):
         self.steps.clear_widgets()
         self.ids.steps.bind(minimum_height=self.ids.steps.setter('height'))
@@ -782,42 +899,52 @@ class LessonApplyScreen(Screen):
             if i == 0:
                 self.text_input_0 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',font_name=self.font_name,pos_hint={'center_y':0.5})
+                                       font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
+                self.text_input_0.on_text = lambda instance=self.text_input_0, text=self.text_input_0.text:self.on_description_text(instance,text)
                 self.bx_layout.add_widget(self.text_input_0)
             elif i == 1:
                 self.text_input_1 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',font_name=self.font_name,pos_hint={'center_y':0.5})
+                                       font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
+                self.text_input_1.on_text = lambda instance=self.text_input_1,text=self.text_input_1.text: self.on_description_text(instance, text)
                 self.bx_layout.add_widget(self.text_input_1)
             elif i == 2:
                 self.text_input_2 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',font_name=self.font_name,pos_hint={'center_y':0.5})
+                                       font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
+
+
+                self.text_input_2.on_text = lambda instance=self.text_input_2, text=self.text_input_2.text: self.on_description_text(instance, text)
                 self.bx_layout.add_widget(self.text_input_2)
             elif i == 3:
                 self.text_input_3 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp', font_name=self.font_name,pos_hint={'center_y':0.5})
+                                       font_size='25sp',write_tab = False, font_name=self.font_name,pos_hint={'center_y':0.5})
+                self.text_input_3.on_text = lambda instance=self.text_input_3,text=self.text_input_3.text: self.on_description_text(instance, text)
                 self.bx_layout.add_widget(self.text_input_3)
             elif i == 4:
                 self.text_input_4 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',font_name=self.font_name,pos_hint={'center_y':0.5})
+                                       font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
+                self.text_input_4.on_text = lambda instance=self.text_input_4,text=self.text_input_4.text: self.on_description_text(instance, text)
                 self.bx_layout.add_widget(self.text_input_4)
             elif i == 5:
                 self.text_input_5 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',font_name=self.font_name,pos_hint={'center_y':0.5})
+                                       font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
+                self.text_input_5.on_text = lambda instance=self.text_input_5,text=self.text_input_5.text: self.on_description_text(instance, text)
                 self.bx_layout.add_widget(self.text_input_5)
             elif i == 6:
                 self.text_input_6 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',font_name=self.font_name,pos_hint={'center_y':0.5})
+                                       font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
+                self.text_input_6.on_text = lambda instance=self.text_input_6,text=self.text_input_6.text: self.on_description_text(instance, text)
                 self.bx_layout.add_widget(self.text_input_6)
             elif i == 7:
                 self.text_input_7 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
-                                       font_size='18sp',font_name=self.font_name,pos_hint={'center_y':0.5})
+                                       font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
+                self.text_input_7.on_text = lambda instance=self.text_input_7,text=self.text_input_7.text: self.on_description_text(instance, text)
                 self.bx_layout.add_widget(self.text_input_7)
 
             image_button = Button(text="Image",size_hint = (0.1,0.2),pos_hint={'center_y':0.5})
@@ -902,20 +1029,32 @@ class CWidget(Widget):
         super().__init__(**kwargs)
         self.text_button = "erase"
         self.start_flag = False
-        self.font_name = self.manager.get_font()
+    def set_font(self,text):
+        self.font_name = text
+
+    def set_language(self, text):
+        self.lesson_language = text
 
     def show_text(self,*args):
-        self.tlabel = Label(text=self.input_text.text,pos=self.location,font_size='35sp',font_name=self.font_name,color=[1,0,0,0.9])
+        self.tlabel = Label(text=self.input_text.text,pos=self.location,font_size='30sp',font_name=self.font_name,color=[1,0,0,0.9])
         self.add_widget(self.tlabel)
 
         self.popup.dismiss()
+
+    def on_description_text(self, wid, text):
+        if text is not None and len(text) > 0 and text[-1] == " " and self.lesson_language != "English":
+            text = text.strip()
+            output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
+            output = output
+            wid.text = output
     def on_touch_down(self, touch):
 
         if touch.is_double_tap:
             print("double tap")
             self.location = (touch.x,touch.y)
             self.blayout = BoxLayout()
-            self.input_text = TextInput(font_name=self.font_name,font_size="20sp")
+            self.input_text = TextInput(font_name=self.font_name,font_size="25sp")
+            self.input_text.on_text = lambda instance=self.input_text,text=self.input_text.text: self.on_description_text(instance, text)
             self.input_button = Button(text="Add Text",on_release=self.show_text)
             self.blayout.add_widget(self.input_text)
             self.blayout.add_widget(self.input_button)
@@ -947,23 +1086,41 @@ class CWidget(Widget):
         if hasattr(touch, "ud") and self.start_flag:
             touch.ud['line'].points += [touch.x, touch.y]
 
+
 class LessonWhiteboardScreen(Screen):
     def __init__(self,**kwargs):
         super(LessonWhiteboardScreen,self).__init__(**kwargs)
 
+    def on_enter(self):
+        self.ids.cw.set_font(self.manager.get_font())
+        self.lessonid = self.manager.get_screen('lessons').selected_lesson
+        self.lesson_language = data_capture_lessons.get_lesson_lanugage(self.lessonid)
+        self.ids.cw.set_language(self.lesson_language)
 
     def save_canvas(self,sv):
+        self.sten_view= sv
+        from android.storage import app_storage_path
+        settings_path = app_storage_path()
+        print("Path Setting"+settings_path)
         self.lessonid = self.manager.get_screen('lessons').selected_lesson
+        sv.export_to_png(settings_path+os.path.sep+"whiteboard.png")
+        exists = os.path.exists(settings_path+os.path.sep+"whiteboard.png")
         self.filename_pfix = "Lessons" + os.path.sep + "Lesson" + str(
-                     self.lessonid) + os.path.sep + "images" + os.path.sep
-        sv.export_to_png(self.filename_pfix+"whiteboard.png")
+            self.lessonid) + os.path.sep + "images" + os.path.sep
+        shutil.copyfile(settings_path+os.path.sep+"whiteboard.png",self.filename_pfix+"whiteboard.png")
+        os.remove(settings_path+os.path.sep+"whiteboard.png")
+        print("Exists Check "+str(exists))
+
+
+
         data_capture_lessons.save_whiteboard_image(self.lessonid,"whiteboard.png")
+
 
 
 
     def set_next_screen(self):
         if self.manager.current == 'whiteboard':
-
+            #   self.save_canvas(self.ids.sv)
             self.manager.transition.direction = 'left'
             self.manager.current = self.manager.next()
 
@@ -983,7 +1140,7 @@ class LessonNotesScreen(Screen):
     def __init__(self, **kwargs):
         super(LessonNotesScreen, self).__init__(**kwargs)
         Window.bind(on_keyboard=self.on_key)
-        self.font_name = self.manager.get_font()
+
 
     def on_key(self, window, key, *args):
         if key == 27:  # the esc key
@@ -991,8 +1148,17 @@ class LessonNotesScreen(Screen):
                 self.manager.current = 'apply'
                 return True
 
+    def on_description_text(self, wid, text):
+        if text is not None and len(text) > 0 and text[-1] == " " and self.lesson_language != "English":
+            text = text.strip()
+            output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
+            output = output
+            wid.text = output
+
     def on_enter(self):
+        self.font_name = self.manager.get_font()
         self.lessonid = self.manager.get_screen('lessons').selected_lesson
+        self.lesson_language = data_capture_lessons.get_lesson_lanugage(self.lessonid)
         txt_notes = data_capture_lessons.get_notes(self.lessonid)
         if (txt_notes is None):
             self.text_label_1 = ""
@@ -1000,6 +1166,8 @@ class LessonNotesScreen(Screen):
             self.text_label_1 = txt_notes
 
     def on_save(self):
+        if self.text_label_1 is None:
+            self.text_label_1 = ""
         ret = data_capture_lessons.save_notes(self.lessonid, self.text_label_1)
         print(self.text_label_1)
         print(str(ret))
@@ -1011,27 +1179,59 @@ class LessonNotesScreen(Screen):
 
     def set_previous_screen(self):
         if self.manager.current == 'notes':
-            self.manager.transition.direction = 'left'
+            self.manager.transition.direction = 'right'
             self.manager.current = 'whiteboard'
 
 class PublishPop(Popup):
-    text_status = StringProperty()
+    text_status = StringProperty("")
     text_user = StringProperty()
     text_pwd = StringProperty()
 
+
     def set_screen_instance(self, parentscreen):
         self.parentscreen = parentscreen
+        self.text_status = ""
+        if data_capture_lessons.is_shared(self.parentscreen.lessonid):
+            classid, userid = data_capture_lessons.get_user_classid()
+            user_id = data_capture_lessons.get_userid(self.parentscreen.lessonid)
+            self.text_status = "The lesson has been shared with following details\n Lesson ID: " + str(self.parentscreen.lessonid) + " Class ID: " + str(classid)+ " User ID: " + str(user_id)
+    def response_status(self,text):
+        self.text_status = text
     def publish_lesson(self):
         self.logintoken = self.get_token(self.text_user, self.text_pwd)
-        data = data_lessons.prepare_lesson_share(self.parentscreen.lessonid)
-        data_lessons.post_lesson(data, self.logintoken, self.parentscreen.lessonid)
-    def get_token(self, user, pwd):
-        logintoken = data_lessons.get_token(user, pwd)
-        return logintoken
+        if self.logintoken == "Login_Failed":
+            self.text_status = "Login Credentials could be wrong or check your connectivity"
+        else:
+            data = data_lessons.prepare_lesson_share(self.parentscreen.lessonid)
+            self.call_update = Thread(target=data_lessons.post_lesson,
+                                      args=(self,data, self.logintoken, self.parentscreen.lessonid))
+
+            #response_text = data_lessons.post_lesson(data, self.logintoken, self.parentscreen.lessonid)
+            # self.call_update = Thread(target=data_lessons.post_lesson, args=(data,self.logintoken,self.parentscreen.lessonid))
+            self.call_update.start()
+            self.progress_bar = ProgressBar()
+            self.popup = Popup(
+                title='Sharing lesson',
+                content=self.progress_bar,
+                size_hint=(1, 0.3), auto_dismiss=False
+            )
+            self.popup.open()
+            Clock.schedule_interval(self.next, 0.5)
+
+
+
+    def next(self, dt):
+        if self.call_update.is_alive():
+            self.progress_bar.value += 5
+        else:
+            self.popup.dismiss()
+            return False
 
     def get_token(self, user, pwd):
         logintoken = data_lessons.get_token(user, pwd)
         return logintoken
+
+
     def register_user(self):
         webbrowser.open("https://thelearningroom.el.r.appspot.com/")
 
@@ -1045,7 +1245,7 @@ class LessonAssessScreen(Screen):
     def __init__(self, **kwargs):
         super(LessonAssessScreen, self).__init__(**kwargs)
         Window.bind(on_keyboard=self.on_key)
-        self.font_name = self.manager.get_font()
+
 
     def on_key(self, window, key, *args):
         if key == 27:  # the esc key
@@ -1060,11 +1260,17 @@ class LessonAssessScreen(Screen):
 
         self.popup_publish.open()
 
-
-
+    def on_description_text(self, wid, text):
+        if text is not None and len(text) > 0 and text[-1] == " " and self.lesson_language != "English":
+            text = text.strip()
+            output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
+            output = output
+            wid.text = output
 
     def on_enter(self):
+        self.font_name = self.manager.get_font()
         self.lessonid = self.manager.get_screen('lessons').selected_lesson
+        self.lesson_language = data_capture_lessons.get_lesson_lanugage(self.lessonid)
         txt_questions, txt_answers = data_capture_lessons.get_questions_answer(self.lessonid)
         if (txt_questions is None):
             self.text_label_1 = ""
@@ -1077,8 +1283,13 @@ class LessonAssessScreen(Screen):
             self.text_label_2 = txt_form
 
     def on_save(self):
+        if self.text_label_1 is None:
+            self.text_label_1 = ""
+        if self.text_label_2 is None:
+            self.text_label_2 = ""
+
         ret = data_capture_lessons.set_questions(self.lessonid, self.text_label_1)
-        ret = data_capture_lessons.set_form_link(self.lessonid, self.text_label_2)
+        ret1 = data_capture_lessons.set_form_link(self.lessonid, self.text_label_2)
         print(self.text_label_1)
         print(str(ret))
 
@@ -1090,7 +1301,7 @@ class LessonAssessScreen(Screen):
 
     def set_previous_screen(self):
         if self.manager.current == 'assess':
-            self.manager.transition.direction = 'left'
+            self.manager.transition.direction = 'right'
             self.manager.current = 'notes'
 
 
@@ -1098,6 +1309,9 @@ class MagicTeacherApp(App):
 
     def build(self):
         # self.icon = 'lr_logo.png'
+        classid = data_capture_lessons.get_classid()
+        if classid is None or classid == "":
+            data_capture_lessons.set_classid()
         return ScreenManagement()
 
 from jnius import autoclass, cast
