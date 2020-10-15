@@ -149,10 +149,10 @@
         AnchorLayout:
             Label:
                 text: root.text_status
-                size_hint:(1,0.2)
+                size_hint:(0.8,0.2)
                 anchor_x:"center"
                 halign:"center"
-                text_size:(self.width,None)
+                text_size:(400,None)
 
 <CreatePop>
     text_lesson_name: create.text
@@ -205,6 +205,13 @@
             size_hint_y:0.3
             on_release: root.close_pop(self)
             background_color:[0.76,0.83,0.86,0.8]
+    AnchorLayout:
+        Label:
+            text:"In Hindi to get आदरणीय अध्यापिका \n you should type AdarNIya adhyApikA"
+            size_hint_x:1
+            font_name:"unifont.ttf"
+            anchor_x:"center"
+            halign:"center"
 
 <DelSpinnerOption@SpinnerOption>
     halign: "left"
@@ -317,6 +324,7 @@
             TextInput:
                 id:sq
                 size_hint:(0.4,0.35)
+                multiline:False
 
             Button:
                 size_hint:(0.2,0.3)
@@ -391,6 +399,7 @@
                 pos_hint: {'top':1}
                 id:url_txt
                 size_hint:(0.25,0.25)
+                multiline:False
 
             Button:
                 pos_hint: {'top':1}
@@ -494,6 +503,7 @@
                 font_size:'30sp'
                 font_name:root.font_name
                 halign:"center"
+                multiline:False
                 on_text:root.on_title_text(self,self.text)
             BoxLayout:
                 orientation:'vertical'
@@ -516,13 +526,13 @@
                 id: scrlv
                 size_hint:(1,0.3)
 
-                #TextInput:
                 TextInput:
                     id:text_description
                     font_size:'25sp'
-                    font_name : root.font_name
+                    font_name : "notosans.ttf"
                     background_color:[0.76,0.83,0.86,0.8]
-
+                    use_bubble:True
+                    use_handles:True
                     height: max(self.minimum_height, scrlv.height)
                     on_text:root.on_title_desc_text(self,self.text)
                     text:root.text_label_1
@@ -591,6 +601,7 @@
                 font_name:root.font_name
                 on_text:root.on_term_text(self,self.text)
                 font_size:"25sp"
+                multiline:False
                 size_hint:(1,0.1)
                 halign:"center"
 
@@ -645,6 +656,20 @@
                     id: steps
                     height: max(self.minimum_height, scrlv1.height)
                     size_hint_y:None
+<imgwhiteboardpopup>:
+    size_hint:(0.8,0.8)
+
+    title: root.text_image_presence
+
+    BoxLayout:
+        orientation:'vertical'
+
+
+        Image:
+            source:root.whiteboard_image
+            size: 500, 500/ self.image_ratio
+            #size_hint: (0.7,0.6)
+            #allow_stretch:True
 
 
 <LessonWhiteboardScreen>
@@ -664,6 +689,9 @@
                     with_previous: True
                     on_release: root.set_previous_screen()
                     app_icon: "logo.png"
+                ActionButton:
+                    text: ' Last Saved '
+                    on_release:root.open_last_saved()
 
                 ActionButton:
                     text: ' Next '
@@ -701,6 +729,7 @@
 
 <LessonNotesScreen>
     text_label_1: txt.text
+    txt:txt
     BoxLayout:
         orientation: 'vertical'
         ActionBar:
@@ -731,8 +760,8 @@
                 text:root.text_label_1
         Button:
             size_hint:(1,0.2)
-            text:"Save"
-            on_release: root.on_save()
+            text:"Paste"
+            on_release: root.txt.paste()
             background_color:[0.76,0.83,0.86,0.8]
 
 <LessonAssessScreen>
@@ -772,7 +801,7 @@
         TextInput:
             id:txt_form
             size_hint:(1,0.1)
-            hint_text:"Google Form Link"
+            hint_text:"Google Form Link,paste the full link including http://"
             font_size:"25sp"
             multiline:False
             text_size: self.width, None

@@ -2,8 +2,10 @@ import imghdr
 import ntpath
 import os
 import shutil
+import time
 
-
+#os.environ['KIVY_TEXT']='pil'
+import arabic_reshaper
 from PIL import Image
 import traceback
 import random
@@ -46,6 +48,11 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 
 
 Window.softinput_mode = 'below_target'
+
+
+
+
+
 
 class LessonListScreen(Screen):
 
@@ -202,6 +209,7 @@ class CreatePop(BoxLayout):
 
 
         data_capture_lessons.create_lesson(self.text_lesson_name,self.lang_lesson)
+        self.lessonid = data_capture_lessons.get_new_id()
         os.mkdir("Lessons/Lesson" + str(self.lessonid))
         os.mkdir("Lessons/Lesson" + str(self.lessonid) + "/images")
         shutil.copyfile("placeholder.png", "Lessons/Lesson" + str(self.lessonid) + "/images/placeholder.png")
@@ -299,19 +307,11 @@ class LessonTitleScreen(Screen):
            wid.text = output
 
     def animate(self, dt):
-        # create an animation object. This object could be stored
-        # and reused each call or reused across different widgets.
-        # += is a sequential step, while &= is in parallel
+
         self.animation_count += 1
         animation = Animation(center_x=self.width / 1.7, t='in_quad')
         animation += Animation(center_x=self.width / 2.3, t='in_quad')
-        # animation += Animation(pos=(200, 100), t='out_bounce')
-        # animation &= Animation(size=(500, 500))
-        # animation += Animation(size=(100, 50))
 
-        # apply the animation on the button, passed in the "instance" argument
-        # Notice that default 'click' animation (changing the button
-        # color while the mouse is down) is unchanged.
         if self.animation_count == 3:
             animation += Animation(center_x=self.width / 2, t='in_quad')
             animation.start(self.ids.tl_image)
@@ -329,7 +329,9 @@ class LessonTitleScreen(Screen):
         self.font_name = self.manager.get_font()
         title, title_image, title_running_notes = data_capture_lessons.get_title_info(self.lessonid)
         if title_running_notes is not None:
-            self.text_label_1 = title_running_notes
+           # self.text_label_1 = title_running_notes
+             text_to_check = "अंतरिक्ष"
+             self.text_label_1 = arabic_reshaper.reshape(text_to_check)
         else:
             self.text_label_1 = ""
         if title is not None:
@@ -423,15 +425,18 @@ class imgurlpopup(Popup):
     def file_resize(self,imagefile):
         import PIL
         size = os.path.getsize(imagefile)
+        i_type = imghdr.what(imagefile)
         img = PIL.Image.open(imagefile)
 
         if size <= 500000:
-            return imagefile
+            img.save("titletmp." + i_type)
+            return ("titletmp." + i_type)
         else:
             w, h = img.size
-            img = img.resize(w/2,h/2,Image.ANTIALIAS)
-            img.save("titletmp")
-            self.file_resize("titletmp")
+            img = img.resize((int(w/2),int(h/2)))
+
+            img.save("titletmp."+i_type)
+            return(self.file_resize("titletmp."+i_type))
 
     def save_selected_image(self):
         print(self.text_image)
@@ -442,6 +447,7 @@ class imgurlpopup(Popup):
         self.filename_pfix = "Lessons" + os.path.sep + "Lesson" + str(
             self.parentscreen.lessonid) + os.path.sep + "images" + os.path.sep
         filename = ""
+        file_name_resized="titletmp"
         try:
 
             response = requests.get(self.text_image)
@@ -450,26 +456,29 @@ class imgurlpopup(Popup):
             file = open("titletmp", "wb")
             file.write(response.content)
             file.close()
-            file = self.file_resize("titletmp")
+            file_name_resized = self.file_resize("titletmp")
         except:
             traceback.print_exc()
             print("Wondersky: Error while downloading Images")
-        filetype = imghdr.what("titletmp")
-        fname_base = ""
-        if self.parentscreen.manager.current == 'title':
-            fname_base = "title"
-        elif self.parentscreen.manager.current == 'factual':
-            fname_base = "term"+str(self.image_index)
-        elif self.parentscreen.manager.current == 'apply':
-            fname_base = "step" + str(self.image_index)
+        try:
+            filetype = imghdr.what(file_name_resized)
+            fname_base = ""
+            if self.parentscreen.manager.current == 'title':
+                fname_base = "title"
+            elif self.parentscreen.manager.current == 'factual':
+                fname_base = "term"+str(self.image_index)
+            elif self.parentscreen.manager.current == 'apply':
+                fname_base = "step" + str(self.image_index)
 
-        if filetype is not None:
-            filename = self.filename_pfix + fname_base+"." + filetype
-        else:
-            filename = self.filename_pfix + fname_base
-        shutil.copyfile("titletmp", filename)
-        # os.remove("titletmp")
-
+            if filetype is not None:
+                filename = self.filename_pfix + fname_base+"." + filetype
+            else:
+                filename = self.filename_pfix + fname_base
+            shutil.copyfile(file_name_resized, filename)
+            os.remove(file_name_resized)
+        except:
+            traceback.print_exc()
+            print("Wondersky: Error while downloading Images")
         if self.parentscreen.manager.current == "title":
             self.parentscreen.text_image = filename
             self.parentscreen.ids.tl_image.reload()
@@ -519,18 +528,21 @@ class imgpopup(Popup):
         self.pop = pop
         self.image_index = image_index
 
-    def file_resize(self, imagefile):
+    def file_resize(self,imagefile):
         import PIL
         size = os.path.getsize(imagefile)
+        i_type = imghdr.what(imagefile)
         img = PIL.Image.open(imagefile)
 
         if size <= 500000:
-            return imagefile
+            img.save("titletmp." + i_type)
+            return ("titletmp." + i_type)
         else:
             w, h = img.size
-            img = img.resize(w / 2, h / 2)
-            img.save("titletmp")
-            self.file_resize("titletmp")
+            img = img.resize((int(w/2),int(h/2)))
+
+            img.save("titletmp."+i_type)
+            return(self.file_resize("titletmp."+i_type))
 
     def save_selected_image(self):
         print(self.text_image)
@@ -541,34 +553,38 @@ class imgpopup(Popup):
         self.filename_pfix = "Lessons" + os.path.sep + "Lesson" + str(
             self.parentscreen.lessonid) + os.path.sep + "images" + os.path.sep
         filename = ""
+        file_name_resized = "titletmp"
         try:
 
             response = requests.get(self.text_image)
-            if response.status_code == 400 or response.status_code==500:
+            if response.status_code == 400 or response.status_code == 500:
                 return "error"
             file = open("titletmp", "wb")
             file.write(response.content)
             file.close()
-            file = self.file_resize("titletmp")
+            file_name_resized = self.file_resize("titletmp")
         except:
             traceback.print_exc()
             print("Wondersky: Error while downloading Images")
-        filetype = imghdr.what("titletmp")
-        fname_base = ""
-        if self.parentscreen.manager.current == 'title':
-            fname_base = "title"
-        elif self.parentscreen.manager.current == 'factual':
-            fname_base = "term"+str(self.image_index)
-        elif self.parentscreen.manager.current == 'apply':
-            fname_base = "step" + str(self.image_index)
+        try:
+            filetype = imghdr.what(file_name_resized)
+            fname_base = ""
+            if self.parentscreen.manager.current == 'title':
+                fname_base = "title"
+            elif self.parentscreen.manager.current == 'factual':
+                fname_base = "term" + str(self.image_index)
+            elif self.parentscreen.manager.current == 'apply':
+                fname_base = "step" + str(self.image_index)
 
-        if filetype is not None:
-            filename = self.filename_pfix + fname_base+"." + filetype
-        else:
-            filename = self.filename_pfix + fname_base
-        shutil.copyfile("titletmp", filename)
-        # os.remove("titletmp")
-
+            if filetype is not None:
+                filename = self.filename_pfix + fname_base + "." + filetype
+            else:
+                filename = self.filename_pfix + fname_base
+            shutil.copyfile(file_name_resized, filename)
+            os.remove(file_name_resized)
+        except:
+            traceback.print_exc()
+            print("Wondersky: Error while downloading Images")
         if self.parentscreen.manager.current == "title":
             self.parentscreen.text_image = filename
             self.parentscreen.ids.tl_image.reload()
@@ -704,6 +720,7 @@ class LessonFactualScreen(Screen):
     def on_key(self, window, key, *args):
         if key == 27:  # the esc key
             if self.manager.current == 'factual':
+                self.manager.transition.direction = 'right'
                 self.manager.current = 'title'
                 return True
 
@@ -849,6 +866,7 @@ class LessonApplyScreen(Screen):
     def on_key(self, window, key, *args):
         if key == 27:  # the esc key
             if self.manager.current == 'apply':
+                self.manager.transition.direction = 'right'
                 self.manager.current = 'factual'
                 return True
 
@@ -885,7 +903,7 @@ class LessonApplyScreen(Screen):
         if text is not None and len(text) > 0 and text[-1] == " " and self.lesson_language != "English":
             text = text.strip()
             output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
-            output = output
+            output = output+' '
             wid.text = output
     def add_steps_buttons(self):
         self.steps.clear_widgets()
@@ -900,13 +918,13 @@ class LessonApplyScreen(Screen):
                 self.text_input_0 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
-                self.text_input_0.on_text = lambda instance=self.text_input_0, text=self.text_input_0.text:self.on_description_text(instance,text)
+                self.text_input_0.bind(text = lambda instance=self.text_input_0, text=self.text_input_0.text:self.on_description_text(instance,text))
                 self.bx_layout.add_widget(self.text_input_0)
             elif i == 1:
                 self.text_input_1 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
-                self.text_input_1.on_text = lambda instance=self.text_input_1,text=self.text_input_1.text: self.on_description_text(instance, text)
+                self.text_input_1.bind(text = lambda instance=self.text_input_1,text=self.text_input_1.text: self.on_description_text(instance, text))
                 self.bx_layout.add_widget(self.text_input_1)
             elif i == 2:
                 self.text_input_2 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
@@ -914,37 +932,37 @@ class LessonApplyScreen(Screen):
                                        font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
 
 
-                self.text_input_2.on_text = lambda instance=self.text_input_2, text=self.text_input_2.text: self.on_description_text(instance, text)
+                self.text_input_2.bind(text = lambda instance=self.text_input_2, text=self.text_input_2.text: self.on_description_text(instance, text))
                 self.bx_layout.add_widget(self.text_input_2)
             elif i == 3:
                 self.text_input_3 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False, font_name=self.font_name,pos_hint={'center_y':0.5})
-                self.text_input_3.on_text = lambda instance=self.text_input_3,text=self.text_input_3.text: self.on_description_text(instance, text)
+                self.text_input_3.bind( text = lambda instance=self.text_input_3,text=self.text_input_3.text: self.on_description_text(instance, text))
                 self.bx_layout.add_widget(self.text_input_3)
             elif i == 4:
                 self.text_input_4 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
-                self.text_input_4.on_text = lambda instance=self.text_input_4,text=self.text_input_4.text: self.on_description_text(instance, text)
+                self.text_input_4.bind(text = lambda instance=self.text_input_4,text=self.text_input_4.text: self.on_description_text(instance, text))
                 self.bx_layout.add_widget(self.text_input_4)
             elif i == 5:
                 self.text_input_5 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
-                self.text_input_5.on_text = lambda instance=self.text_input_5,text=self.text_input_5.text: self.on_description_text(instance, text)
+                self.text_input_5.bind(text = lambda instance=self.text_input_5,text=self.text_input_5.text: self.on_description_text(instance, text))
                 self.bx_layout.add_widget(self.text_input_5)
             elif i == 6:
                 self.text_input_6 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
-                self.text_input_6.on_text = lambda instance=self.text_input_6,text=self.text_input_6.text: self.on_description_text(instance, text)
+                self.text_input_6.bind(text =  lambda instance=self.text_input_6,text=self.text_input_6.text: self.on_description_text(instance, text))
                 self.bx_layout.add_widget(self.text_input_6)
             elif i == 7:
                 self.text_input_7 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
-                self.text_input_7.on_text = lambda instance=self.text_input_7,text=self.text_input_7.text: self.on_description_text(instance, text)
+                self.text_input_7.bind(text =  lambda instance=self.text_input_7,text=self.text_input_7.text: self.on_description_text(instance, text))
                 self.bx_layout.add_widget(self.text_input_7)
 
             image_button = Button(text="Image",size_hint = (0.1,0.2),pos_hint={'center_y':0.5})
@@ -1045,7 +1063,7 @@ class CWidget(Widget):
         if text is not None and len(text) > 0 and text[-1] == " " and self.lesson_language != "English":
             text = text.strip()
             output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
-            output = output
+            output = output+' '
             wid.text = output
     def on_touch_down(self, touch):
 
@@ -1053,8 +1071,8 @@ class CWidget(Widget):
             print("double tap")
             self.location = (touch.x,touch.y)
             self.blayout = BoxLayout()
-            self.input_text = TextInput(font_name=self.font_name,font_size="25sp")
-            self.input_text.on_text = lambda instance=self.input_text,text=self.input_text.text: self.on_description_text(instance, text)
+            self.input_text = TextInput(font_name=self.font_name,font_size="25sp",multiline=False)
+            self.input_text.bind(text = lambda instance=self.input_text,text=self.input_text.text: self.on_description_text(instance, text))
             self.input_button = Button(text="Add Text",on_release=self.show_text)
             self.blayout.add_widget(self.input_text)
             self.blayout.add_widget(self.input_button)
@@ -1090,12 +1108,22 @@ class CWidget(Widget):
 class LessonWhiteboardScreen(Screen):
     def __init__(self,**kwargs):
         super(LessonWhiteboardScreen,self).__init__(**kwargs)
+        Window.bind(on_keyboard=self.on_key)
 
     def on_enter(self):
         self.ids.cw.set_font(self.manager.get_font())
         self.lessonid = self.manager.get_screen('lessons').selected_lesson
         self.lesson_language = data_capture_lessons.get_lesson_lanugage(self.lessonid)
         self.ids.cw.set_language(self.lesson_language)
+
+    def open_last_saved(self):
+        img_wb_pop = imgwhiteboardpopup()
+        whiteboard_path = "Lessons" + os.path.sep + "Lesson" + str(self.lessonid) + os.path.sep + "images" + os.path.sep+"whiteboard.png"
+        if (os.path.exists(whiteboard_path)):
+            img_wb_pop.set_image_file("Last Saved Board",whiteboard_path)
+
+        img_wb_pop.open()
+
 
     def save_canvas(self,sv):
         self.sten_view= sv
@@ -1115,7 +1143,12 @@ class LessonWhiteboardScreen(Screen):
 
         data_capture_lessons.save_whiteboard_image(self.lessonid,"whiteboard.png")
 
-
+    def on_key(self, window, key, *args):
+        if key == 27:  # the esc key
+            if self.manager.current == 'whiteboard':
+                self.manager.current = 'apply'
+                self.manager.transition.direction = 'right'
+                return True
 
 
     def set_next_screen(self):
@@ -1131,7 +1164,15 @@ class LessonWhiteboardScreen(Screen):
 
 
 
+class imgwhiteboardpopup(Popup):
+    text_image_presence = StringProperty("No Save Board Yet")
+    whiteboard_image = StringProperty("trans.png")
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
+    def set_image_file(self,presence,filename):
+        self.text_image_presence = presence
+        self.whiteboard_image = filename
 
 class LessonNotesScreen(Screen):
     text_label_1 = StringProperty()
@@ -1145,14 +1186,15 @@ class LessonNotesScreen(Screen):
     def on_key(self, window, key, *args):
         if key == 27:  # the esc key
             if self.manager.current == 'notes':
-                self.manager.current = 'apply'
+                self.manager.transition.direction = 'right'
+                self.manager.current = 'whiteboard'
                 return True
 
     def on_description_text(self, wid, text):
         if text is not None and len(text) > 0 and text[-1] == " " and self.lesson_language != "English":
             text = text.strip()
             output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
-            output = output
+            output = output+' '
             wid.text = output
 
     def on_enter(self):
@@ -1171,6 +1213,9 @@ class LessonNotesScreen(Screen):
         ret = data_capture_lessons.save_notes(self.lessonid, self.text_label_1)
         print(self.text_label_1)
         print(str(ret))
+
+
+
     def set_next_screen(self):
         self.on_save()
         if self.manager.current == 'notes':
@@ -1183,14 +1228,15 @@ class LessonNotesScreen(Screen):
             self.manager.current = 'whiteboard'
 
 class PublishPop(Popup):
-    text_status = StringProperty("")
+    text_status = StringProperty("The lesson will be published in our servers with an access code.\n Students can access the lesson"
+                                 " and get it into their devices from the \"Learning Room\" app -> https://play.google.com/store/apps/details?id=in.wondersky.lr")
     text_user = StringProperty()
     text_pwd = StringProperty()
 
 
     def set_screen_instance(self, parentscreen):
         self.parentscreen = parentscreen
-        self.text_status = ""
+
         if data_capture_lessons.is_shared(self.parentscreen.lessonid):
             classid, userid = data_capture_lessons.get_user_classid()
             user_id = data_capture_lessons.get_userid(self.parentscreen.lessonid)
@@ -1250,6 +1296,7 @@ class LessonAssessScreen(Screen):
     def on_key(self, window, key, *args):
         if key == 27:  # the esc key
             if self.manager.current == 'assess':
+                self.manager.transition.direction = 'right'
                 self.manager.current = 'notes'
                 return True
 
@@ -1264,7 +1311,7 @@ class LessonAssessScreen(Screen):
         if text is not None and len(text) > 0 and text[-1] == " " and self.lesson_language != "English":
             text = text.strip()
             output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
-            output = output
+            output = output+' '
             wid.text = output
 
     def on_enter(self):
