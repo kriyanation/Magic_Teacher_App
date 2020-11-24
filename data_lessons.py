@@ -153,10 +153,10 @@ def post_lesson(call_screen,data, token,lesson_id):
             data = response.content
 
             data_capture_lessons.update_shared(lesson_id,userid)
-            post_status = "The lesson has been posted with following details\n Lesson ID:"+str(lesson_id)+" Class ID: "+str(class_id)+" User ID: "+str(userid)
+            post_status = "The lesson has been posted with following details\n User ID: "+str(userid)+" Class ID: "+str(class_id)+" Lesson ID:"+str(lesson_id)
         elif response.status_code==200:
             data_capture_lessons.update_shared(lesson_id, userid)
-            post_status = "The lesson has been posted with following details\n Lesson ID:" + str(lesson_id) + " Class ID: " + str(class_id) + " User ID: " + str(userid)
+            post_status = "The lesson has been posted with following details\n User ID: "+str(userid)+" Class ID: "+str(class_id)+" Lesson ID:"+str(lesson_id)
         else:
             post_status = response.text
         url_logout= url_root+"auth/token/logout/"
@@ -167,23 +167,26 @@ def post_lesson(call_screen,data, token,lesson_id):
     except Exception:
         print(traceback.print_exc())
         print("exception")
+        call_screen.response_status("Lesson could not be posted, there could be a problem with some corrupted texts.\n Please check once")
+        return "Lesson could not be posted,it could be because of copied texts which are corrupted.\n Please check your input texts once"
 
 
 def import_new_lesson(user,classid,lessonid):
-
-    url_root = "https://thelearningroom.el.r.appspot.com/"
-    headers = {'Content-Type': 'application/json'}
-    url = url_root+"lesson/lesson/?username=" + user + "&lesson_id=" + lessonid + "&class_id=" + classid
-    response_get = requests.get(url, headers=headers)
-    response_object_get = json.loads(response_get.content)
-    if response_get.status_code == 200 and len(response_object_get) > 0:
-       # messagebox.showinfo("Lesson Import","Import triggered\n The screen will close and refresh once import is completed",parent=lessonwindow)
-        json_object = response_object_get[0]
-        status = update_lesson_details(json_object)
-        if status == "error":
-            return "error"
-    else:
-        return "error"
+    try:
+        url_root = "https://thelearningroom.el.r.appspot.com/"
+        headers = {'Content-Type': 'application/json'}
+        url = url_root+"lesson/lesson/?username=" + user + "&lesson_id=" + lessonid + "&class_id=" + classid
+        response_get = requests.get(url, headers=headers)
+        response_object_get = json.loads(response_get.content)
+        if response_get.status_code == 200 and len(response_object_get) > 0:
+           # messagebox.showinfo("Lesson Import","Import triggered\n The screen will close and refresh once import is completed",parent=lessonwindow)
+            json_object = response_object_get[0]
+            #status = update_lesson_details(json_object)
+            return 0, json_object
+        else:
+            return 1, None
+    except:
+        return 1, None
 
 def update_lesson_details(json_object):
     title_image_file = json_object["title_image"]
@@ -259,14 +262,14 @@ def update_lesson_details(json_object):
                         json_object["questions"],"",whiteboard_filename,json_object["application_video_running_notes"],json_object["application_video_link"],json_object["lesson_language"]]
     data_capture_lessons.insert_imported_record(query_parameters)
     new_id = data_capture_lessons.get_new_id()
-    if not os.path.exists("../Lessons/Lesson"+str(new_id)):
-        os.mkdir("../Lessons/Lesson"+str(new_id))
-        os.mkdir("../Lessons/Lesson"+str(new_id)+"/images")
+    if not os.path.exists("Lessons/Lesson"+str(new_id)):
+        os.mkdir("Lessons/Lesson"+str(new_id))
+        os.mkdir("Lessons/Lesson"+str(new_id)+"/images")
         src_files = os.listdir("tmp")
         for file_name in src_files:
             full_file_name = os.path.join("tmp", file_name)
             if os.path.isfile(full_file_name):
-                shutil.copy(full_file_name, "../Lessons/Lesson"+str(new_id)+"/images")
+                shutil.copy(full_file_name, "Lessons/Lesson"+str(new_id)+"/images")
                 os.remove(full_file_name)
         os.rmdir("tmp")
 def constructfilename(fileurl,prefix):

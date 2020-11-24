@@ -4,13 +4,14 @@ import os
 import shutil
 import time
 
-#os.environ['KIVY_TEXT']='pil'
-import arabic_reshaper
+#os.environ['KIVY_TEXT']='pango'
+
 from PIL import Image
 import traceback
 import random
 import webbrowser
 from threading import Thread
+from plyer import filechooser
 
 from kivy.graphics import Color, Line
 from kivy.metrics import Metrics
@@ -41,6 +42,7 @@ import data_capture_lessons
 import data_lessons
 import image_utils
 import certifi
+from kivy.utils import platform
 
 
 # Here's all the magic !
@@ -48,6 +50,13 @@ os.environ['SSL_CERT_FILE'] = certifi.where()
 
 
 Window.softinput_mode = 'below_target'
+from kivy.config import Config
+
+
+if platform !='android':
+    Config.remove_option('input','%(name)s')
+    print (Config.items('input'))
+
 
 
 
@@ -160,7 +169,7 @@ class ImportPop(BoxLayout):
             self.progress_bar.value += 5
         else:
             self.popup.dismiss()
-            self.listscreen.container.clear_widgets()
+            self.listscreen.ids.lesson_c.clear_widgets()
             self.listscreen.add_buttons(1)
             self.lesson_import_flag = 0
             self.popw.dismiss()
@@ -210,8 +219,9 @@ class CreatePop(BoxLayout):
 
         data_capture_lessons.create_lesson(self.text_lesson_name,self.lang_lesson)
         self.lessonid = data_capture_lessons.get_new_id()
-        os.mkdir("Lessons/Lesson" + str(self.lessonid))
-        os.mkdir("Lessons/Lesson" + str(self.lessonid) + "/images")
+        if not os.path.exists("Lessons/Lesson" + str(self.lessonid)):
+            os.mkdir("Lessons/Lesson" + str(self.lessonid))
+            os.mkdir("Lessons/Lesson" + str(self.lessonid) + "/images")
         shutil.copyfile("placeholder.png", "Lessons/Lesson" + str(self.lessonid) + "/images/placeholder.png")
         self.listscreen.ids.lesson_c.clear_widgets()
 
@@ -226,7 +236,7 @@ class CreatePop(BoxLayout):
         if text is not None and len(text) > 0 and text[-1] == " " and self.lang_lesson != "English":
             text = text.strip()
             output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
-            output = output
+            output = output+' '
             wid.text = output
 
     def close_pop(self, *args):
@@ -239,6 +249,9 @@ class CreatePop(BoxLayout):
     def set_popupw(self, pop):
         self.popw = pop
 
+class lessonpurchasepopup(Popup):
+    def lesson_purchase(self):
+        webbrowser.open("https://thelearningroom.el.r.appspot.com/login")
 
 class DeletePop(Popup):
     lesson_list = ListProperty()
@@ -306,20 +319,6 @@ class LessonTitleScreen(Screen):
            output = output+" "
            wid.text = output
 
-    def animate(self, dt):
-
-        self.animation_count += 1
-        animation = Animation(center_x=self.width / 1.7, t='in_quad')
-        animation += Animation(center_x=self.width / 2.3, t='in_quad')
-
-        if self.animation_count == 3:
-            animation += Animation(center_x=self.width / 2, t='in_quad')
-            animation.start(self.ids.tl_image)
-            self.animation_count = 0
-            return False
-
-        animation.start(self.ids.tl_image)
-
     def reset_speak_flag(self, t):
         self.speak_flag = 0
 
@@ -329,9 +328,9 @@ class LessonTitleScreen(Screen):
         self.font_name = self.manager.get_font()
         title, title_image, title_running_notes = data_capture_lessons.get_title_info(self.lessonid)
         if title_running_notes is not None:
-           # self.text_label_1 = title_running_notes
-             text_to_check = "अंतरिक्ष"
-             self.text_label_1 = arabic_reshaper.reshape(text_to_check)
+             self.text_label_1 = title_running_notes
+            # text_to_check = "अंतरिक्ष"
+             #self.text_label_1 = arabic_reshaper.reshape(text_to_check)
         else:
             self.text_label_1 = ""
         if title is not None:
@@ -349,7 +348,7 @@ class LessonTitleScreen(Screen):
         else:
 
             self.text_image = "placeholder.png"
-        Clock.schedule_interval(self.animate, 2)
+
 
 
     def set_previous_screen(self):
@@ -384,18 +383,21 @@ class ImageSelectPop(Popup):
 
 
     def showImages(self):
-        print("button pressed" + self.search_query)
-        img_util = image_utils.ImageUtils()
-        image_urls = img_util.search_images(self.search_query)
-        self.ids.imagelist.clear_widgets()
-        for image in image_urls:
-            box_layout = BoxLayout(orientation='vertical')
-            async_image = AsyncImage(source=image, size=(200, 200))
-            button_image = Button(text="view", size_hint=(0.4, 0.2), pos_hint={'center_x': .5, 'center_y': .5})
-            button_image.on_release = lambda instance=button_image, a=image: self.load_image(instance, a)
-            box_layout.add_widget(async_image)
-            box_layout.add_widget(button_image)
-            self.ids.imagelist.add_widget(box_layout)
+        try:
+            print("button pressed" + self.search_query)
+            img_util = image_utils.ImageUtils()
+            image_urls = img_util.search_images(self.search_query)
+            self.ids.imagelist.clear_widgets()
+            for image in image_urls:
+                box_layout = BoxLayout(orientation='vertical')
+                async_image = AsyncImage(source=image,nocache=True, size=(200, 200))
+                button_image = Button(text="view", size_hint=(0.4, 0.2),background_color=[0.76,0.83,0.86,0.8], pos_hint={'center_x': .5, 'center_y': .5})
+                button_image.on_release = lambda instance=button_image, a=image: self.load_image(instance, a)
+                box_layout.add_widget(async_image)
+                box_layout.add_widget(button_image)
+                self.ids.imagelist.add_widget(box_layout)
+        except:
+            print("Cache Issues")
 
     def load_image(self, source, src):
         img_pop = imgpopup()
@@ -403,14 +405,14 @@ class ImageSelectPop(Popup):
         img_pop.set_parentscreen(self.parentscreen,self.image_index, self)
         img_pop.open()
         print("image touched" + src)
+    def file_select(self):
 
+       pass
 
     def file_pop(self):
         img_pop = imgurlpopup()
-
         img_pop.set_parentscreen(self.parentscreen, self.image_index, self)
         img_pop.open()
-
 
 
 class imgurlpopup(Popup):
@@ -535,8 +537,12 @@ class imgpopup(Popup):
         img = PIL.Image.open(imagefile)
 
         if size <= 500000:
-            img.save("titletmp." + i_type)
-            return ("titletmp." + i_type)
+            if i_type is not None:
+                img.save("titletmp." + i_type)
+                return ("titletmp." + i_type)
+            else:
+                img.save("titletmp")
+                return "titletmp"
         else:
             w, h = img.size
             img = img.resize((int(w/2),int(h/2)))
@@ -620,7 +626,14 @@ class imgpopup(Popup):
 
         self.dismiss()
         self.pop.dismiss()
-        
+
+class LimitedTextInput(TextInput):
+    def insert_text(self, substring, from_undo=False):
+        if len(self.text) < 50:  # if the length of the substring is less than 10, return the substring
+            s = substring
+        else:
+            s = ""  # is the substring length is 10 or greater, only return the first 10 characters
+        return super().insert_text(s, from_undo=from_undo)
 
 class LessonFactualScreen(Screen):
     text_image_1 = StringProperty()
@@ -639,14 +652,14 @@ class LessonFactualScreen(Screen):
         if text is not None and len(text) > 0 and text[-1] == " " and self.lesson_language != "English":
             text = text.strip()
             output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
-            output = output
+            output = output+" "
             wid.text = output
 
     def on_description_text(self, wid, text):
         if text is not None and len(text) > 0 and text[-1] == " " and self.lesson_language != "English":
             text = text.strip()
             output = transliterate(text, sanscript.HK, sanscript.DEVANAGARI)
-            output = output
+            output = output+" "
             wid.text = output
     def __init__(self, **kwargs):
         super(LessonFactualScreen, self).__init__(**kwargs)
@@ -820,7 +833,7 @@ class LessonFactualScreen(Screen):
                                               self.text_term_display)
 
 
-        else:
+        elif self.display_index == 2:
             data_capture_lessons.update_term3(self.lessonid, os.path.basename(self.text_image_display),
                                               self.text_term_description,
                                               self.text_term_display)
@@ -887,6 +900,7 @@ class LessonApplyScreen(Screen):
             self.manager.transition.direction = 'right'
             self.manager.current = self.manager.previous()
     def save_screen(self):
+
         data_capture_lessons.save_step_texts(self.lessonid,self.text_input_0.text,self.text_input_1.text,self.text_input_2.text,self.text_input_3.text,self.text_input_4.text,self.text_input_5.text,
                                              self.text_input_6.text,self.text_input_7.text)
         data_capture_lessons.save_step_images(self.lessonid,ntpath.basename(self.step_image_0.source),ntpath.basename(self.step_image_1.source),ntpath.basename(self.step_image_2.source),
@@ -915,19 +929,19 @@ class LessonApplyScreen(Screen):
                 text = ""
             self.bx_layout = BoxLayout(spacing = [20,10])
             if i == 0:
-                self.text_input_0 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
+                self.text_input_0 = LimitedTextInput(text=text,hint_text="limits to 50 characters", height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.text_input_0.bind(text = lambda instance=self.text_input_0, text=self.text_input_0.text:self.on_description_text(instance,text))
                 self.bx_layout.add_widget(self.text_input_0)
             elif i == 1:
-                self.text_input_1 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
+                self.text_input_1 = LimitedTextInput(text=text,hint_text="limits to 50 characters", height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.text_input_1.bind(text = lambda instance=self.text_input_1,text=self.text_input_1.text: self.on_description_text(instance, text))
                 self.bx_layout.add_widget(self.text_input_1)
             elif i == 2:
-                self.text_input_2 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
+                self.text_input_2 = LimitedTextInput(text=text,hint_text="limits to 50 characters", height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
 
@@ -935,37 +949,37 @@ class LessonApplyScreen(Screen):
                 self.text_input_2.bind(text = lambda instance=self.text_input_2, text=self.text_input_2.text: self.on_description_text(instance, text))
                 self.bx_layout.add_widget(self.text_input_2)
             elif i == 3:
-                self.text_input_3 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
+                self.text_input_3 = LimitedTextInput(text=text, hint_text="limits to 50 characters",height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False, font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.text_input_3.bind( text = lambda instance=self.text_input_3,text=self.text_input_3.text: self.on_description_text(instance, text))
                 self.bx_layout.add_widget(self.text_input_3)
             elif i == 4:
-                self.text_input_4 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
+                self.text_input_4 = LimitedTextInput(text=text,hint_text="limits to 50 characters", height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.text_input_4.bind(text = lambda instance=self.text_input_4,text=self.text_input_4.text: self.on_description_text(instance, text))
                 self.bx_layout.add_widget(self.text_input_4)
             elif i == 5:
-                self.text_input_5 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
+                self.text_input_5 = LimitedTextInput(text=text, hint_text="limits to 50 characters",height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.text_input_5.bind(text = lambda instance=self.text_input_5,text=self.text_input_5.text: self.on_description_text(instance, text))
                 self.bx_layout.add_widget(self.text_input_5)
             elif i == 6:
-                self.text_input_6 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
+                self.text_input_6 = LimitedTextInput(text=text, hint_text="limits to 50 characters",height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.text_input_6.bind(text =  lambda instance=self.text_input_6,text=self.text_input_6.text: self.on_description_text(instance, text))
                 self.bx_layout.add_widget(self.text_input_6)
             elif i == 7:
-                self.text_input_7 = TextInput(text=text, height="60sp", size_hint=(0.5, None)
+                self.text_input_7 = LimitedTextInput(text=text,hint_text="limits to 50 characters", height="60sp", size_hint=(0.5, None)
                                        , text_size=(3.5 * Metrics.dpi, None),
                                        font_size='25sp',write_tab = False,font_name=self.font_name,pos_hint={'center_y':0.5})
                 self.text_input_7.bind(text =  lambda instance=self.text_input_7,text=self.text_input_7.text: self.on_description_text(instance, text))
                 self.bx_layout.add_widget(self.text_input_7)
 
-            image_button = Button(text="Image",size_hint = (0.1,0.2),pos_hint={'center_y':0.5})
+            image_button = Button(text="Image",background_color=[0.76,0.83,0.86,0.8],size_hint = (0.1,0.2),pos_hint={'center_y':0.5})
             image_button.on_release=lambda instance = image_button,a=i:self.image_select(instance,a)
 
 
@@ -1115,12 +1129,15 @@ class LessonWhiteboardScreen(Screen):
         self.lessonid = self.manager.get_screen('lessons').selected_lesson
         self.lesson_language = data_capture_lessons.get_lesson_lanugage(self.lessonid)
         self.ids.cw.set_language(self.lesson_language)
+        self.filename_pfix = "Lessons" + os.path.sep + "Lesson" + str(
+            self.lessonid) + os.path.sep + "images" + os.path.sep
 
     def open_last_saved(self):
         img_wb_pop = imgwhiteboardpopup()
         whiteboard_path = "Lessons" + os.path.sep + "Lesson" + str(self.lessonid) + os.path.sep + "images" + os.path.sep+"whiteboard.png"
         if (os.path.exists(whiteboard_path)):
             img_wb_pop.set_image_file("Last Saved Board",whiteboard_path)
+            img_wb_pop.ids.img_wb.reload()
 
         img_wb_pop.open()
 
@@ -1133,8 +1150,7 @@ class LessonWhiteboardScreen(Screen):
         self.lessonid = self.manager.get_screen('lessons').selected_lesson
         sv.export_to_png(settings_path+os.path.sep+"whiteboard.png")
         exists = os.path.exists(settings_path+os.path.sep+"whiteboard.png")
-        self.filename_pfix = "Lessons" + os.path.sep + "Lesson" + str(
-            self.lessonid) + os.path.sep + "images" + os.path.sep
+
         shutil.copyfile(settings_path+os.path.sep+"whiteboard.png",self.filename_pfix+"whiteboard.png")
         os.remove(settings_path+os.path.sep+"whiteboard.png")
         print("Exists Check "+str(exists))
@@ -1154,6 +1170,8 @@ class LessonWhiteboardScreen(Screen):
     def set_next_screen(self):
         if self.manager.current == 'whiteboard':
             #   self.save_canvas(self.ids.sv)
+            if os.path.exists(self.filename_pfix+"whiteboard.png") == False:
+                data_capture_lessons.save_whiteboard_image(self.lessonid, "")
             self.manager.transition.direction = 'left'
             self.manager.current = self.manager.next()
 
@@ -1240,7 +1258,7 @@ class PublishPop(Popup):
         if data_capture_lessons.is_shared(self.parentscreen.lessonid):
             classid, userid = data_capture_lessons.get_user_classid()
             user_id = data_capture_lessons.get_userid(self.parentscreen.lessonid)
-            self.text_status = "The lesson has been shared with following details\n Lesson ID: " + str(self.parentscreen.lessonid) + " Class ID: " + str(classid)+ " User ID: " + str(user_id)
+            self.text_status = "The lesson has been shared with following details\n User ID: " + str(user_id)+ " Class ID: " + str(classid)+ " Lesson ID: " + str(self.parentscreen.lessonid)
     def response_status(self,text):
         self.text_status = text
     def publish_lesson(self):
@@ -1266,11 +1284,16 @@ class PublishPop(Popup):
 
 
 
+
     def next(self, dt):
         if self.call_update.is_alive():
             self.progress_bar.value += 5
         else:
             self.popup.dismiss()
+            c_check = "maximum"
+            if (c_check in self.text_status):
+                self.purchase_pop = lessonpurchasepopup()
+                self.purchase_pop.open()
             return False
 
     def get_token(self, user, pwd):
@@ -1279,10 +1302,10 @@ class PublishPop(Popup):
 
 
     def register_user(self):
-        webbrowser.open("https://thelearningroom.el.r.appspot.com/")
+        webbrowser.open("https://thelearningroom.el.r.appspot.com/signup/")
 
 
-class LessonAssessScreen(Screen):
+class LessonAssessScreen(Screen):  
     text_label_1 = StringProperty()
     text_label_2 = StringProperty()
     font_name = StringProperty("Caveat-Bold.ttf")
@@ -1353,6 +1376,8 @@ class LessonAssessScreen(Screen):
 
 
 class MagicTeacherApp(App):
+    def on_pause(self):
+        return True
 
     def build(self):
         # self.icon = 'lr_logo.png'

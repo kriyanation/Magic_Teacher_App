@@ -152,7 +152,7 @@
                 size_hint:(0.8,0.2)
                 anchor_x:"center"
                 halign:"center"
-                text_size:(400,None)
+                text_size:(800,None)
 
 <CreatePop>
     text_lesson_name: create.text
@@ -217,6 +217,7 @@
     halign: "left"
     font_name: "unifont.ttf"
     text_size:(300,None)
+    background_color:[0.76,0.83,0.86,0.8]
 
 <DeletePop>
     #text_lessoid: user.text
@@ -306,6 +307,7 @@
             BoxLayout:
                 id:lesson_c
                 orientation: 'vertical'
+
                 size_hint_y:None
 
 <ImageSelectPop>:
@@ -318,28 +320,37 @@
         orientation:"vertical"
         spacing:[5,5]
         BoxLayout:
-            spacing:[5,5]
+            spacing:[10,10]
+            size_hint:(1,0.2)
+            Button:
+                size_hint:(0.2,0.3)
+                text: "Open an Image Link"
+                on_release:root.file_pop()
+                background_color:[0.76,0.83,0.86,0.8]
+
+            Button:
+                size_hint:(0.2,0.3)
+                text: "Close Selector"
+                on_release:root.dismiss()
+                background_color:[0.76,0.83,0.86,0.8]
+
+        BoxLayout:
+            spacing:[10,10]
             size_hint:(1,0.2)
 
             TextInput:
                 id:sq
-                size_hint:(0.4,0.35)
+                size_hint:(0.5,0.35)
                 multiline:False
+                hint_text: "Google Search Images"
 
             Button:
-                size_hint:(0.2,0.3)
+                size_hint:(0.2,0.35)
                 text: "Search"
                 on_release:root.showImages()
+                background_color:[0.76,0.83,0.86,0.8]
 
-            Button:
-                size_hint:(0.2,0.3)
-                text: "Link"
-                on_release:root.file_pop()
 
-            Button:
-                size_hint:(0.2,0.3)
-                text: "Close"
-                on_release:root.dismiss()
 
         GridLayout:
             cols:2
@@ -400,18 +411,22 @@
                 id:url_txt
                 size_hint:(0.25,0.25)
                 multiline:False
+                hint_text:"Paste the Direct Link to the Image"
 
             Button:
                 pos_hint: {'top':1}
                 size_hint:(0.15,0.25)
                 text: "Paste"
                 on_release:root.url_txt.paste()
+                background_color:[0.76,0.83,0.86,0.8]
+
 
             Button:
                 pos_hint: {'top':1}
                 size_hint:(0.15,0.25)
                 text: "Show"
                 on_release:root.show_image(root.url_txt.text)
+                background_color:[0.76,0.83,0.86,0.8]
 
         AsyncImage:
             pos_hint: {'top':1}
@@ -520,6 +535,7 @@
                         size_hint:(0.5,0.25)
                         anchor_x:"center"
                         on_press: root.launch_image_selector()
+                        background_color:[0.76,0.83,0.86,0.8]
 
 
             ScrollView:
@@ -529,8 +545,8 @@
                 TextInput:
                     id:text_description
                     font_size:'25sp'
-                    font_name : "notosans.ttf"
-                    background_color:[0.76,0.83,0.86,0.8]
+                    font_name : root.font_name
+
                     use_bubble:True
                     use_handles:True
                     height: max(self.minimum_height, scrlv.height)
@@ -595,6 +611,7 @@
                     size_hint:(0.5,0.2)
                     anchor_x:"center"
                     on_press: root.launch_image_selector()
+                    background_color:[0.76,0.83,0.86,0.8]
             TextInput:
                 id:term
                 text:root.text_term_display
@@ -657,20 +674,44 @@
                     height: max(self.minimum_height, scrlv1.height)
                     size_hint_y:None
 <imgwhiteboardpopup>:
-    size_hint:(0.8,0.8)
-
+    size_hint:(1,1)
+    img_wb:img_wb
     title: root.text_image_presence
 
     BoxLayout:
         orientation:'vertical'
-
-
         Image:
+            id:img_wb
             source:root.whiteboard_image
             size: 500, 500/ self.image_ratio
             #size_hint: (0.7,0.6)
             #allow_stretch:True
+        Button:
+            text: 'Close'
+            size_hint_x:1
+            size_hint_y:0.2
+            on_release: root.dismiss()
+            background_color:[0.76,0.83,0.86,0.8]
 
+<lessonpurchasepopup>:
+    size_hint:(0.5,0.5)
+    auto_dismiss:True
+    title: "Lesson Top Up"
+
+    BoxLayout:
+        orientation:'vertical'
+
+        Label:
+            text:"Top up Lesson Sharing @ Re 1 per lesson.Click Below"
+            text_size:(self.width,None)
+            halign:"center"
+
+        Button:
+            text:"Lesson Top Up"
+            size_hint:(1,0.2)
+            halign:"center"
+            on_release:root.lesson_purchase()
+            background_color:[0.76,0.83,0.86,0.8]
 
 <LessonWhiteboardScreen>
     cw:cw
@@ -706,16 +747,19 @@
                 size_hint:(0.3,None)
                 height:"40sp"
                 on_release:root.save_canvas(root.sv)
+                background_color:[0.76,0.83,0.86,0.8]
             Button:
                 text:"clear"
                 size_hint:(0.3,None)
                 height:"40sp"
                 on_release:root.cw.clear()
+                background_color:[0.76,0.83,0.86,0.8]
             ToggleButton:
                 text: root.cw.text_button
                 on_state: root.cw.erase() if self.state == 'down' else root.cw.pen()
                 size_hint:(0.3,None)
                 height:"40sp"
+                background_color:[0.76,0.83,0.86,0.8]
 
 
         StencilView:
@@ -767,6 +811,7 @@
 <LessonAssessScreen>
     text_label_1: txt.text
     text_label_2: txt_form.text
+    txt_form:txt_form
     BoxLayout:
         orientation: 'vertical'
         ActionBar:
@@ -802,13 +847,13 @@
             id:txt_form
             size_hint:(1,0.1)
             hint_text:"Google Form Link,paste the full link including http://"
-            font_size:"25sp"
+            font_size:"15sp"
             multiline:False
             text_size: self.width, None
 
             text:root.text_label_2
         Button:
-            size_hint:(1,0.2)
-            text:"Save"
-            on_release: root.on_save()
+            size_hint:(1,0.15)
+            text:"Paste Form Link"
+            on_release: root.txt_form.paste()
             background_color:[0.76,0.83,0.86,0.8]

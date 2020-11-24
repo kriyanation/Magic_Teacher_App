@@ -413,7 +413,7 @@ def get_classid():
         cur.execute(sqlsel)
         rows = cur.fetchone()
         connection.close()
-        return rows
+        return rows[0]
     except sqlite3.OperationalError:
         traceback.print_exc()
         return 1
