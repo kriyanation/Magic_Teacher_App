@@ -431,3 +431,43 @@ def set_classid():
     except sqlite3.OperationalError:
         traceback.print_exc()
         return 1
+
+def update_group_id(groupid):
+    lessonid = get_new_id()
+    try:
+        connection = sqlite3.connect(db)
+        cur = connection.cursor()
+        sql = ("update Magic_Science_Lessons set Group_ID = ? where Lesson_ID = ?")
+        cur.execute(sql, (groupid, lessonid))
+        connection.commit()
+        return 0
+    except sqlite3.OperationalError:
+        traceback.print_exc()
+        return 1
+
+def get_groups():
+    connection = sqlite3.connect(db)
+    cur = connection.cursor()
+    sql = "select Group_ID, Group_Name from Groups_Table"
+    cur.execute(sql)
+    rows = cur.fetchall()
+    list_groups = []
+    for element in rows:
+        list_groups.append(element)
+    connection.commit()
+    connection.close()
+    return list_groups
+
+
+def get_Lessons_ofgroup(groupid):
+    connection = sqlite3.connect(db)
+    cur = connection.cursor()
+    sql = "select Lesson_ID, Lesson_Title,Title_Notes_Language from Magic_Science_Lessons where Group_ID=?"
+    cur.execute(sql,(groupid,))
+    rows = cur.fetchall()
+    list_lessons = []
+    for element in rows:
+        list_lessons.append(element)
+    connection.commit()
+    connection.close()
+    return list_lessons

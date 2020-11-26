@@ -1,5 +1,8 @@
 #:import Factory kivy.factory.Factory
 <ScreenManagement>:
+    LessonGroupScreen:
+        id:screen0
+        name: 'groups'
     LessonListScreen:
         id:screen1
         name: 'lessons'
@@ -64,6 +67,23 @@
             size_hint_y:0.04
             font_size:'20sp'
 
+        Label:
+            text:"Group"
+            size_hint_x:0.2
+
+        Spinner:
+            id: whatever
+            text: " Group A "
+
+            halign:"left"                              #default value showed
+            text_size:(300, None)
+            values: root.lesson_groups      #list of values to show
+            option_cls: Factory.get("DelSpinnerOption")
+            on_text:
+                root.on_select_group(self.text)
+            background_color:[0.76,0.83,0.86,0.8]
+            font_name:"Caveat-Bold"
+            font_size: "30sp"
 
 
         Button:
@@ -74,7 +94,7 @@
             background_color:[0.76,0.83,0.86,0.8]
 
         Button:
-            text: 'Cancel'
+            text: 'Close'
             size_hint_x:0.2
             size_hint_y:0.8
             on_release: root.close_pop()
@@ -193,6 +213,25 @@
             on_text:root.on_title_text(self,self.text)
             font_size:'25sp'
 
+        Label:
+            text:"Group"
+            size_hint_x:0.2
+
+        Spinner:
+            id: whatever
+            text: " Group A "
+
+            halign:"left"                              #default value showed
+            text_size:(300, None)
+            values: root.lesson_groups      #list of values to show
+            option_cls: Factory.get("DelSpinnerOption")
+            on_text:
+                root.on_select_group(self.text)
+            background_color:[0.76,0.83,0.86,0.8]
+            font_name:"Caveat-Bold"
+            font_size: "30sp"
+
+
         Button:
             text: 'Create'
             size_hint_x:1
@@ -200,7 +239,7 @@
             on_release: root.create_lesson(self)
             background_color:[0.76,0.83,0.86,0.8]
         Button:
-            text: 'Cancel'
+            text: 'Close'
             size_hint_x:1
             size_hint_y:0.3
             on_release: root.close_pop(self)
@@ -210,6 +249,14 @@
             text:"In Hindi to get आदरणीय अध्यापिका \n you should type AdarNIya adhyApikA"
             size_hint_x:1
             font_name:"unifont.ttf"
+            anchor_x:"center"
+            halign:"center"
+    AnchorLayout:
+        size_hint:(1,0.1)
+        Label:
+            text: root.text_status
+            size_hint_x:1
+            text_size:(self.width,None)
             anchor_x:"center"
             halign:"center"
 
@@ -263,6 +310,37 @@
             size_hint: (1,0.2)
             on_release: root.dismiss()
             background_color:[0.76,0.83,0.86,0.8]
+<LessonGroupScreen>
+
+    container: container
+    BoxLayout:
+        orientation: 'vertical'
+        ActionBar:
+            pos_hint: {'top':1}
+
+            ActionView:
+                use_separator: True
+
+
+                ActionPrevious:
+                    app_icon: "logo.png"
+
+                ActionButton:
+                    text: ' Create Mini Lesson '
+                    on_press: root.launch_popup_create()
+
+                ActionButton:
+                    text: ' Import Mini Lesson '
+                    on_press: root.launch_popup()
+
+
+        ScrollView:
+            size_hint: (1, 1)
+
+            BoxLayout:
+                id: container
+                orientation: 'vertical'
+                size_hint_y:None
 
 <LessonListScreen>
 
@@ -278,14 +356,10 @@
 
                 ActionPrevious:
                     app_icon: "logo.png"
+                    on_release: root.set_previous_screen()
 
-                ActionButton:
-                    text: ' Create Mini Lesson '
-                    on_press: root.launch_popup()
 
-                ActionButton:
-                    text: ' Import '
-                    on_press: root.launch_popup_import()
+
                 ActionOverflow:
                     ActionButton:
                         text: ' Delete '
@@ -846,7 +920,7 @@
         TextInput:
             id:txt_form
             size_hint:(1,0.1)
-            hint_text:"Google Form Link,paste the full link including http://"
+            hint_text:"Add External Link, paste the full link including http://"
             font_size:"15sp"
             multiline:False
             text_size: self.width, None
@@ -854,6 +928,6 @@
             text:root.text_label_2
         Button:
             size_hint:(1,0.15)
-            text:"Paste Form Link"
+            text:"Paste External Link"
             on_release: root.txt_form.paste()
             background_color:[0.76,0.83,0.86,0.8]
